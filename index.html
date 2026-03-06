@@ -421,8 +421,26 @@
   box-shadow:0 26px 70px rgba(37,99,235,.18);
   backdrop-filter: blur(14px);
 }
-#secLogin .login-avatar{width:96px;height:96px;border-radius:999px;margin:-64px auto 14px;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,1), rgba(255,255,255,.65) 55%, rgba(255,255,255,.55) 100%);border:1px solid rgba(15,27,58,.10);box-shadow:0 18px 38px rgba(37,99,235,.18);position:relative}
-#secLogin .login-avatar:after{content:"";position:absolute;inset:22px 28px 30px 28px;border-radius:999px;background:rgba(37,99,235,.10)}
+#secLogin .login-avatar{
+width:130px;
+height:130px;
+border-radius:999px;
+margin:-80px auto 16px;
+background:white;
+border:1px solid rgba(15,27,58,.10);
+box-shadow:0 18px 38px rgba(37,99,235,.18);
+position:relative;
+display:flex;
+align-items:center;
+justify-content:center;
+overflow:hidden;
+}
+
+.login-avatar img{
+width:95px;
+height:auto;
+object-fit:contain;
+}
 #secLogin .login-title{text-align:center;font-weight:900;letter-spacing:.2px;font-size:30px;line-height:1.1;background:linear-gradient(90deg,#1d4ed8,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
 #secLogin .login-desc{text-align:center;color:rgba(90,106,163,.95);margin:8px auto 18px;max-width:46ch;line-height:1.45;font-size:13px}
 #secLogin .login-fields{margin-top:8px}
@@ -612,7 +630,9 @@
   </div>
 
   <div class="login-glass" role="region" aria-label="เข้าสู่ระบบ">
-    <div class="login-avatar" aria-hidden="true"></div>
+    <div class="login-avatar">
+  <img src="logoNB.png" alt="Siriraj Anesthesiology">
+</div>
 
     <div class="login-title">เข้าสู่ระบบ</div>
     <div class="login-desc"></div>
