@@ -351,24 +351,22 @@
 }
 
 /* ===== Date picker: show calendar icon only + DD-MM-YYYY label ===== */
-/* Mobile Calendar Fix */
+/* ===== Mobile Friendly Date Picker ===== */
 .dateIconOnly{
   width:44px;
   min-width:44px;
-  height:42px;
+  height:44px;
   padding:6px;
   border-radius:12px;
-  border:1px solid var(--line);
+  border:1px solid #d0d7e2;
   background:#fff;
-
-  appearance:auto;
-  -webkit-appearance:auto;
-  position:relative;
+  font-size:16px;
+  cursor:pointer;
 }
 
-/* ไม่ซ่อนช่องวันที่ในมือถือ */
+/* ซ่อนตัวเลขวันที่ แต่ยังให้ปฏิทินทำงาน */
 .dateIconOnly::-webkit-datetime-edit{
-  opacity:0;
+  color:transparent;
 }
 
 /* ซ่อน spin */
@@ -376,10 +374,9 @@
   display:none;
 }
 
-/* แสดงไอคอนปฏิทิน */
+/* ปุ่มปฏิทิน */
 .dateIconOnly::-webkit-calendar-picker-indicator{
   opacity:1;
-  display:block;
   cursor:pointer;
   width:24px;
   height:24px;
