@@ -8,6 +8,22 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+/* ===== Fix mobile layout for borrow form ===== */
+.timeRow{
+  display:flex;
+  gap:10px;
+  flex-wrap:nowrap;
+}
+
+.timeRow .timeBox{
+  flex:1;
+  min-width:0;
+}
+
+/* ให้ select เวลากว้างเต็ม */
+.timeRow select{
+  width:100%;
+}
     :root{
       --bg1:#eef6ff;
       --bg2:#fff3e6;
@@ -345,6 +361,35 @@
 }
   .title h1{ font-size:16px; line-height:1.15; }
   .title p{ font-size:12px; line-height:1.2; }
+
+ภาพที่อัปโหลด
+ภาพที่อัปโหลด
+ภาพที่อัปโหลด
+
+index.html
+ไฟล์
+อยากให้หน้าจอแสดงผลในมือถือ เหมือนกับในคอมรูปสุดท้ายซึ่งตรงกดเลือกวันเวลาที่จองเป็นรูปไอคอนปฏิทิน และบรรทัดเวลาเริ่มต้น และเวลาสิ้นสุดให้อยู่ในบรรทัดเดียวกัน
+
+จากโค้ดที่คุณอัปโหลด ระบบจริง ๆ ทำแบบเดียวกับในคอมอยู่แล้ว เพียงแต่ mobile มัน wrap ลงบรรทัดใหม่ เพราะ .row ใช้ flex-wrap: wrap ทำให้ช่อง เวลาเริ่ม + เวลาสิ้นสุด หล่นลงบรรทัดใหม่ ครับ 
+index
+
+
+โค้ดฟอร์มยืมตอนนี้เป็นแบบนี้อยู่แล้ว:
+
+วันที่มีไอคอนปฏิทิน (type="date" + class dateIconOnly) 
+index
+
+
+เวลาเริ่ม / เวลาสิ้นสุด อยู่ใน .row เดียวกัน 
+index
+
+
+แต่ มือถือมันบีบ width เลยตกบรรทัด
+
+วิธีแก้ให้มือถือเหมือน Desktop
+1️⃣ แก้ CSS บังคับให้เวลาอยู่บรรทัดเดียวกัน
+เพิ่ม CSS นี้ใน <style> ของไฟล์
+
 
   /* ซ่อนชื่อฝั่งขวาในมือถือ แล้วใช้ชื่อใต้หัวซ้ายแทน */
   #userPill{ display:none !important; }
@@ -1213,18 +1258,34 @@ function closeModal(ev){ if(ev.target&&ev.target.id==='backdrop') hideModal(); }
 function borrowFormHtml(){
   const d=todayISO();
   return `
-    <div class="row" style="margin-bottom:12px">
-      <div style="flex:1 1 160px"><label>รหัสเครื่อง</label><select id="bDevice" class="inputSel"><option value="">กำลังโหลด...</option></select></div>
-      <div style="flex:0 0 220px">
-        <label>วันที่ยืม/จอง</label>
-        <div style="display:flex;gap:10px;align-items:center">
-          <input type="date" id="bDate" class="dateIconOnly" value="${d}" lang="en-GB">
-          <div class="chip" id="bDateLabel">-</div>
-        </div>
-      </div>
-      <div style="flex:0 0 150px"><label>เวลาเริ่ม</label><select id="bStart" class="timeSel"></select></div>
-      <div style="flex:0 0 150px"><label>เวลาสิ้นสุด</label><select id="bEnd" class="timeSel"></select></div>
+   <div class="row timeRow" style="margin-bottom:12px">
+
+  <div style="flex:1 1 160px">
+    <label>รหัสเครื่อง</label>
+    <select id="bDevice" class="inputSel">
+      <option value="">กำลังโหลด...</option>
+    </select>
+  </div>
+
+  <div style="flex:0 0 170px">
+    <label>วันที่ยืม/จอง</label>
+    <div style="display:flex;gap:10px;align-items:center">
+      <input type="date" id="bDate" class="dateIconOnly">
+      <div class="chip" id="bDateLabel">-</div>
     </div>
+  </div>
+
+  <div class="timeBox">
+    <label>เวลาเริ่ม</label>
+    <select id="bStart" class="timeSel"></select>
+  </div>
+
+  <div class="timeBox">
+    <label>เวลาสิ้นสุด</label>
+    <select id="bEnd" class="timeSel"></select>
+  </div>
+
+</div>
 
     <div class="row" style="margin-bottom:12px">
       <div style="flex:1 1 160px;max-width:220px"><label>สถานที่ใช้งาน</label><select id="bLocationSel" class="inputSel"><option value="">กำลังโหลด...</option></select><input id="bLocationOther" class="input" style="margin-top:8px;display:none" placeholder="ระบุสถานที่เพิ่มเติม"></div>
