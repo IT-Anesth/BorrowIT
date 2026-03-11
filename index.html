@@ -351,11 +351,39 @@
 }
 
 /* ===== Date picker: show calendar icon only + DD-MM-YYYY label ===== */
-.dateIconOnly{ width:44px; min-width:44px; padding:10px; border-radius:12px; font-variant-numeric:tabular-nums; }
-.dateIconOnly::-webkit-datetime-edit{ display:none; }
-.dateIconOnly::-webkit-inner-spin-button{ display:none; }
-.dateIconOnly::-webkit-calendar-picker-indicator{ opacity:1; cursor:pointer; }
+/* Mobile Calendar Fix */
+.dateIconOnly{
+  width:44px;
+  min-width:44px;
+  height:42px;
+  padding:6px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#fff;
 
+  appearance:auto;
+  -webkit-appearance:auto;
+  position:relative;
+}
+
+/* ไม่ซ่อนช่องวันที่ในมือถือ */
+.dateIconOnly::-webkit-datetime-edit{
+  opacity:0;
+}
+
+/* ซ่อน spin */
+.dateIconOnly::-webkit-inner-spin-button{
+  display:none;
+}
+
+/* แสดงไอคอนปฏิทิน */
+.dateIconOnly::-webkit-calendar-picker-indicator{
+  opacity:1;
+  display:block;
+  cursor:pointer;
+  width:24px;
+  height:24px;
+}
     /* === Responsive fix: no horizontal scroll on mobile/tablet/iPad === */
     html, body{max-width:100%; overflow-x:hidden;}
     img, svg{max-width:100%; height:auto;}
