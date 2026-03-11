@@ -351,7 +351,9 @@
 }
 
 /* ===== Date picker: show calendar icon only + DD-MM-YYYY label ===== */
-
+.dateIconOnly{ width:44px; min-width:44px; padding:10px; border-radius:12px; font-variant-numeric:tabular-nums; }
+.dateIconOnly::-webkit-datetime-edit{ display:none; }
+.dateIconOnly::-webkit-inner-spin-button{ display:none; }
 .dateIconOnly::-webkit-calendar-picker-indicator{ opacity:1; cursor:pointer; }
 
     /* === Responsive fix: no horizontal scroll on mobile/tablet/iPad === */
@@ -1216,7 +1218,7 @@ function borrowFormHtml(){
       <div style="flex:0 0 220px">
         <label>วันที่ยืม/จอง</label>
         <div style="display:flex;gap:10px;align-items:center">
-         <input type="date" id="fDate" lang="en-GB">
+          <input type="date" id="bDate" class="dateIconOnly" value="${d}" lang="en-GB">
           <div class="chip" id="bDateLabel">-</div>
         </div>
       </div>
@@ -1581,7 +1583,15 @@ function returnFormHtml(){
       <div style="flex:0 0 220px">
         <label>วันที่คืน</label>
         <div style="display:flex;gap:10px;align-items:center">
-          <input type="date" id="bDate" value="${d}" lang="en-GB">
+          <div class="datePickerBox">
+
+<button type="button" class="calendarBtn" onclick="openDate()">
+📅
+</button>
+
+<input type="date" id="reportDate">
+
+</div>
           <div class="chip" id="rDateLabel">-</div>
         </div>
       </div>
@@ -1954,6 +1964,9 @@ async function adminSave(rowId){
     document.addEventListener('touchend', blurButton, {capture:true, passive:true});
     document.addEventListener('pointerup', blurButton, true);
   })();
+function openDate(){
+document.getElementById("reportDate").showPicker();
+}
 </script>
 
 </body>
