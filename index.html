@@ -11,6 +11,29 @@
 .datePickerBox{
 display:flex;
 align-items:center;
+gap:10px;
+}
+
+.calendarBtn{
+width:44px;
+height:44px;
+border-radius:12px;
+border:1px solid #cfd8e3;
+background:#ffffff;
+font-size:22px;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator{
+opacity:0;
+position:absolute;
+}
+.datePickerBox{
+display:flex;
+align-items:center;
 gap:8px;
 }
 
@@ -1607,16 +1630,17 @@ function returnFormHtml(){
     <div class="row" style="margin-bottom:12px">
       <div style="flex:1 1 180px"><label>รหัสเครื่อง</label><select id="rDevice" class="inputSel"><option value="">กำลังโหลด...</option></select></div>
       <div style="flex:0 0 220px">
+
         <label>วันที่คืน</label>
         <div style="display:flex;gap:10px;align-items:center">
           <div class="datePickerBox">
 
-<button type="button" class="calendarBtn" onclick="openDate()">
+<button type="button" class="calendarBtn" onclick="document.getElementById('reportDate').showPicker()">
 📅
 </button>
 
 <input type="date" id="reportDate">
-
+</div>
 </div>
           <div class="chip" id="rDateLabel">-</div>
         </div>
