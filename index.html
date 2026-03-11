@@ -8,55 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-.datePickerBox{
-display:flex;
-align-items:center;
-gap:10px;
-}
-
-.calendarBtn{
-width:44px;
-height:44px;
-border-radius:12px;
-border:1px solid #cfd8e3;
-background:#ffffff;
-font-size:22px;
-display:flex;
-align-items:center;
-justify-content:center;
-cursor:pointer;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator{
-opacity:0;
-position:absolute;
-}
-.datePickerBox{
-display:flex;
-align-items:center;
-gap:8px;
-}
-
-.calendarBtn{
-width:42px;
-height:42px;
-border-radius:10px;
-border:1px solid #d0d7e2;
-background:#ffffff;
-font-size:22px;
-display:flex;
-align-items:center;
-justify-content:center;
-cursor:pointer;
-}
-
-#reportDate{
-height:42px;
-padding:0 12px;
-border-radius:20px;
-border:1px solid #d0d7e2;
-font-size:16px;
-}
     :root{
       --bg1:#eef6ff;
       --bg2:#fff3e6;
@@ -399,13 +350,24 @@ font-size:16px;
   #userPill{ display:none !important; }
 }
 
-/* ===== Date picker: show calendar icon only + DD-MM-YYYY label ===== */
-.dateIconOnly{ width:44px; min-width:44px; padding:10px; border-radius:12px; font-variant-numeric:tabular-nums; }
-.dateIconOnly::-webkit-datetime-edit{ display:none; }
-.dateIconOnly::-webkit-inner-spin-button{ display:none; }
-.dateIconOnly::-webkit-calendar-picker-indicator{ opacity:1; cursor:pointer; }
+/* Date picker mobile fix */
+.dateIconOnly{
+  width:44px;
+  min-width:44px;
+  padding:10px;
+  border-radius:12px;
+}
 
-    /* === Responsive fix: no horizontal scroll on mobile/tablet/iPad === */
+/* เอาการซ่อนออก */
+.dateIconOnly::-webkit-datetime-edit{
+  opacity:0;
+}
+
+/* แสดงไอคอนปฏิทิน */
+.dateIconOnly::-webkit-calendar-picker-indicator{
+  opacity:1;
+  cursor:pointer;
+}    /* === Responsive fix: no horizontal scroll on mobile/tablet/iPad === */
     html, body{max-width:100%; overflow-x:hidden;}
     img, svg{max-width:100%; height:auto;}
 
@@ -1630,18 +1592,9 @@ function returnFormHtml(){
     <div class="row" style="margin-bottom:12px">
       <div style="flex:1 1 180px"><label>รหัสเครื่อง</label><select id="rDevice" class="inputSel"><option value="">กำลังโหลด...</option></select></div>
       <div style="flex:0 0 220px">
-
         <label>วันที่คืน</label>
         <div style="display:flex;gap:10px;align-items:center">
-          <div class="datePickerBox">
-
-<button type="button" class="calendarBtn" onclick="document.getElementById('reportDate').showPicker()">
-📅
-</button>
-
-<input type="date" id="reportDate">
-</div>
-</div>
+          <input type="date" id="rDate" class="dateIconOnly" value="${d}" lang="en-GB">
           <div class="chip" id="rDateLabel">-</div>
         </div>
       </div>
@@ -2014,12 +1967,6 @@ async function adminSave(rowId){
     document.addEventListener('touchend', blurButton, {capture:true, passive:true});
     document.addEventListener('pointerup', blurButton, true);
   })();
-function openDate(){
-document.getElementById("reportDate").showPicker();
-}
-function openDate(){
-document.getElementById("reportDate").showPicker();
-}
 </script>
 
 </body>
