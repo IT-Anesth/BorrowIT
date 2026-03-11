@@ -8,21 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-.dateBox{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-.calendarBtn{
-  width:42px;
-  height:42px;
-  border-radius:12px;
-  border:1px solid var(--line);
-  background:white;
-  font-size:20px;
-  cursor:pointer;
-}
     :root{
       --bg1:#eef6ff;
       --bg2:#fff3e6;
@@ -365,45 +350,13 @@
   #userPill{ display:none !important; }
 }
 
-/* ===== Mobile Calendar Button ===== */
-.dateIconOnly{
-  position:relative;
-  width:46px;
-  min-width:46px;
-  height:44px;
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:#f8fbff;
-  cursor:pointer;
-}
+/* ===== Date picker: show calendar icon only + DD-MM-YYYY label ===== */
+.dateIconOnly{ width:44px; min-width:44px; padding:10px; border-radius:12px; font-variant-numeric:tabular-nums; }
+.dateIconOnly::-webkit-datetime-edit{ display:none; }
+.dateIconOnly::-webkit-inner-spin-button{ display:none; }
+.dateIconOnly::-webkit-calendar-picker-indicator{ opacity:1; cursor:pointer; }
 
-/* ซ่อน text ของ date */
-.dateIconOnly::-webkit-datetime-edit{
-  display:none;
-}
-
-/* ซ่อน spin */
-.dateIconOnly::-webkit-inner-spin-button{
-  display:none;
-}
-
-/* ทำไอคอนใหญ่ขึ้น */
-.dateIconOnly::-webkit-calendar-picker-indicator{
-  opacity:1;
-  width:24px;
-  height:24px;
-  cursor:pointer;
-}
-/* เอาการซ่อนออก */
-.dateIconOnly::-webkit-datetime-edit{
-  opacity:0;
-}
-
-/* แสดงไอคอนปฏิทิน */
-.dateIconOnly::-webkit-calendar-picker-indicator{
-  opacity:1;
-  cursor:pointer;
-}    /* === Responsive fix: no horizontal scroll on mobile/tablet/iPad === */
+    /* === Responsive fix: no horizontal scroll on mobile/tablet/iPad === */
     html, body{max-width:100%; overflow-x:hidden;}
     img, svg{max-width:100%; height:auto;}
 
@@ -723,10 +676,7 @@ object-fit:contain;
           <div>
             <label>วันที่</label>
             <div style="display:flex;gap:10px;align-items:center">
-             <div class="dateBox">
-  <button class="calendarBtn" onclick="document.getElementById('fDate').showPicker()">📅</button>
-  <input type="date" id="fDate" class="dateIconOnly" lang="en-GB">
-</div>
+              <input type="date" id="fDate" class="dateIconOnly" lang="en-GB">
               <div class="chip" id="fDateLabel">-</div>
             </div>
           </div>
