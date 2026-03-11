@@ -8,6 +8,32 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+.datePickerBox{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.calendarBtn{
+width:42px;
+height:42px;
+border-radius:10px;
+border:1px solid #d0d7e2;
+background:#ffffff;
+font-size:22px;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+}
+
+#reportDate{
+height:42px;
+padding:0 12px;
+border-radius:20px;
+border:1px solid #d0d7e2;
+font-size:16px;
+}
     :root{
       --bg1:#eef6ff;
       --bg2:#fff3e6;
@@ -1964,6 +1990,9 @@ async function adminSave(rowId){
     document.addEventListener('touchend', blurButton, {capture:true, passive:true});
     document.addEventListener('pointerup', blurButton, true);
   })();
+function openDate(){
+document.getElementById("reportDate").showPicker();
+}
 function openDate(){
 document.getElementById("reportDate").showPicker();
 }
