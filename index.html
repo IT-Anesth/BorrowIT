@@ -1,211 +1,1962 @@
 <!doctype html>
 <html lang="th">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ระบบยืม-คืน Notebook</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ระบบยืม-คืน Notebook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#eef6ff;
+      --bg2:#fff3e6;
+      --card:#ffffff;
+      --line:#dde8f3;
+      --stBlue:#2563eb;--stGreen:#16a34a;--stOrange:#b45309;--stRed:#dc2626;--stGray:#475569;
+      --text:#0f1b3a;
+      --muted:#5a6aa3;
+      --brand:#2563eb;
+      --brand2:#06b6d4;
+      --ok:#16a34a;
+      --bad:#dc2626;
+      --warn:#f59e0b;
+      --shadow:0 14px 34px rgba(16,24,40,.10);
+      --radius:18px
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Kanit,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);background:linear-gradient(180deg,var(--bg1),var(--bg2));min-height:100vh;overflow-x:hidden}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.94);backdrop-filter:saturate(160%) blur(10px);border-bottom:1px solid var(--line)}
+    .wrap{max-width:1200px;margin:0 auto;padding:12px 16px}
+    .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .brand{display:flex;gap:12px;align-items:center;min-width:0}
+    .logo{width:auto;height:auto;display:flex;align-items:center;justify-content:center;overflow:visible;background:transparent;border:none;border-radius:0}
+    .logo img{height:68px;width:auto;object-fit:contain;display:block}
+    .title{min-width:0}
+    .title h1{margin:0;font-size:20px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;letter-spacing:.2px;background:linear-gradient(90deg,#1d4ed8,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .title p{margin:2px 0 0;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .right{display:flex;gap:10px;align-items:center}
+    .pill{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:#fff;padding:8px 10px;border-radius:999px;font-size:13px;color:var(--muted);max-width:420px}
+    .pill b{color:var(--text);font-weight:600}
+    .btn{border:1px solid transparent;background:var(--brand);color:#fff;border-radius:999px;padding:10px 14px;font-weight:600;cursor:pointer;box-shadow:0 12px 22px rgba(43,139,214,.18);transition:transform .08s ease, box-shadow .18s ease, filter .18s ease}
+    .btn:active{transform:translateY(1px) scale(.99);box-shadow:0 8px 16px rgba(43,139,214,.16);filter:brightness(.98)}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn.ghost{background:#fff;color:var(--text);border-color:var(--line);box-shadow:none}
+    .btn.danger{background:var(--bad)}
+    /* === Gen Z button micro-interactions (no sticky focus) === */
+    .btn, .navbtn{
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+    .btn:hover:not(:disabled){
+      transform:translateY(-1px);
+      box-shadow:0 16px 30px rgba(43,139,214,.22);
+      filter:brightness(1.03);
+    }
+    .btn.ghost:hover:not(:disabled){
+      background:rgba(37,99,235,.06);
+      border-color:rgba(37,99,235,.28);
+      box-shadow:0 10px 18px rgba(16,24,40,.08);
+    }
+    .btn:focus{outline:none}
+    .btn:focus-visible{
+      outline:none;
+      box-shadow:0 0 0 4px rgba(43,139,214,.18), 0 12px 22px rgba(43,139,214,.18);
+    }
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    .navbtn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 12px 22px rgba(16,24,40,.10);
+      border-color:rgba(37,99,235,.22);
+      background:rgba(37,99,235,.04);
+    }
+    .navbtn:focus{outline:none}
+    .navbtn:focus-visible{
+      outline:none;
+      box-shadow:0 0 0 4px rgba(43,139,214,.14), 0 10px 18px rgba(16,24,40,.08);
+    }
 
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    nav{border-top:1px solid var(--line);background:rgba(255,255,255,.85)}
+    .navrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .navbtn{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:#fff;padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:600;color:var(--text);box-shadow:0 10px 18px rgba(16,24,40,.06);transition:transform .08s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease}
+    .navbtn.active{border-color:rgba(43,139,214,.75);background:rgba(43,139,214,.08);box-shadow:0 14px 26px rgba(43,139,214,.18)}
+    .navbtn:active{transform:translateY(1px) scale(.99)}
+    main{max-width:1200px;margin:0 auto;padding:16px}
+    .grid4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch;padding:6px 2px 10px}
+@media(min-width:768px){.grid4{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}}
+.grid4::-webkit-scrollbar-track{background:transparent}
+.grid4>.card{flex:1 1 0;min-width:190px;max-width:260px;scroll-snap-align:start}
 
-<style>
+    /* ===== Stat cards: compact + centered ===== */
+    .grid4{
+      grid-template-columns:repeat(4, minmax(170px, 230px));
+      justify-content:center;
+      gap:12px;
+    }
+    .card.stat .hd{
+      justify-content:center;
+      text-align:center;
+      flex-direction:column;
+      gap:6px;
+      padding:12px 12px;
+    }
+    .card.stat .bd{padding:12px 12px}
+    .card.stat .metric{
+      justify-content:center;
+    }
+    .card.stat .metric > div{
+      width:100%;
+      text-align:center;
+    }
+    .card.stat .metric .lbl{
+      font-size:13px;
+    }
+    .card.stat .metric .n{
+      font-size:30px;
+      line-height:1.05;
+    }
+    @media (max-width: 920px){ .grid4{ } }
+    @media (max-width: 520px){ .grid4{gap:10px;padding:6px 0 10px} .grid4>.card{min-width:0} .card.stat .hd{padding:10px 8px} .card.stat .bd{padding:10px 8px} .card.stat .metric .lbl{font-size:11px} .card.stat .metric .n{font-size:22px} .card.stat .hd h2{font-size:13px} } .grid4>.card{min-width:170px} .card.stat .hd{padding:12px 14px} .card.stat .bd{padding:12px 14px} }
+        .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card .hd{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+    .card .hd h2{margin:0;font-size:16px}
+    .card .bd{padding:14px 16px}
+    .metric{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .metric .n{font-size:28px;font-weight:800}
+    .metric .lbl{color:var(--muted);font-size:13px}
+    .chip{padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;background:#eef6ff;color:#1f5c99;border:1px solid #d8ebff;white-space:nowrap}
+    .chip.ok{background:#eafff3;color:#167a46;border-color:#c9f2da}
+    .chip.bad{background:#ffecec;color:#9d231b;border-color:#ffd0cd}
+    .chip.warn{background:#fff6df;color:#8a6000;border-color:#ffe7b3}
+    
+    /* ===== Dashboard Stat Card Text Colors & Hide Chips ===== */
+    .stat .chip{display:none !important}
+    .stat.total h2, .stat.total .lbl, .stat.total .n{color:#1d4ed8 !important}
+    .stat.avail h2, .stat.avail .lbl, .stat.avail .n{color:#15803d !important}
+    .stat.inuse h2, .stat.inuse .lbl, .stat.inuse .n{color:#9a3412 !important}
+    .stat.issue h2, .stat.issue .lbl, .stat.issue .n{color:#b91c1c !important}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input,select,textarea{font-family:inherit;border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;background:#fff;min-width:140px}
+    textarea{min-height:90px;resize:vertical;min-width:240px}
+    input:focus,select:focus,textarea:focus{border-color:rgba(43,139,214,.6);box-shadow:0 0 0 3px rgba(43,139,214,.12)}
+    .tbl{width:100%;border-collapse:separate;border-spacing:0}
+    .tbl thead th{text-align:left;font-size:13px;color:#1b2a52;background:#e7f5ff;padding:10px 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .tbl thead th:first-child{border-top-left-radius:12px}
+    .tbl thead th:last-child{border-top-right-radius:12px}
+    .tbl tbody td{padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}
+    .tbl tbody tr:hover td{background:#fafcff}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .mini{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:700;font-size:12px}
+    .mini.primary{background:#eef6ff;border-color:#d8ebff;color:#1f5c99}
+    .mini.danger{background:#ffecec;border-color:#ffd0cd;color:#9d231b}
+    .muted{color:var(--muted)}
+    .hide{display:none !important}
+    .backdrop{position:fixed;inset:0;background:rgba(10,16,30,.42);display:none;align-items:flex-start;justify-content:center;padding:22px;z-index:100}
+    .backdrop.show{display:flex}
+    .modal{width:min(980px,100%);background:#fff;border-radius:18px;border:1px solid rgba(255,255,255,.4);box-shadow:0 24px 60px rgba(0,0,0,.22);overflow:hidden}
+    .modal .mhd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+    .modal .mhd h3{margin:0;font-size:16px}
+    .modal .mbd{padding:14px 16px;max-height:min(70vh,740px);overflow-y:auto;overflow-x:hidden}
+    .modal .mbd *{max-width:100%}
+    .x{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:800}
+    /* ====== Login (Gen Z luxe) ====== */
+.login-wrap{max-width:640px;margin:28px auto;padding:18px;position:relative}
+.login-hero{position:absolute;inset:-20px -10px auto -10px;height:260px;pointer-events:none;filter:blur(0px)}
+.login-hero:before,.login-hero:after{content:"";position:absolute;border-radius:999px;filter:blur(40px);opacity:.55}
+.login-hero:before{width:240px;height:240px;left:-40px;top:-30px;background:radial-gradient(circle at 30% 30%, #7dd3fc, transparent 60%)}
+.login-hero:after{width:280px;height:280px;right:-60px;top:-50px;background:radial-gradient(circle at 30% 30%, #fbcfe8, transparent 60%)}
 
-:root{
---bg1:#eef6ff;
---bg2:#fff3e6;
---card:#ffffff;
---line:#dde8f3;
+.login-card{
+  border-radius:24px;
+  padding:26px 26px 22px;
+  background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.82));
+  border:1px solid rgba(21,32,66,.10);
+  box-shadow:0 18px 44px rgba(16,24,40,.12);
+  backdrop-filter:saturate(140%) blur(10px);
+  -webkit-backdrop-filter:saturate(140%) blur(10px);
+}
+.login-top{text-align:center;margin-bottom:18px}
+.login-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:999px;
+  background:rgba(43,139,214,.10);
+  color:#0b2b4b;font-weight:700;font-size:12px;
+  border:1px solid rgba(43,139,214,.18);
+}
+.login-card h2{margin:10px 0 6px;font-size:26px;letter-spacing:-.3px}
+.login-sub{color:var(--muted);font-size:13px;line-height:1.45;max-width:44ch;margin:0 auto}
+.login-form{margin-top:14px}
+.login-label{display:block;font-size:12px;color:var(--muted);margin:0 0 8px 2px}
+.input-group{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border-radius:16px;
+  border:1px solid rgba(21,32,66,.14);
+  background:#fff;
+  box-shadow:0 10px 20px rgba(16,24,40,.06);
+}
+.ig-icon{
+  width:32px;height:32px;display:grid;place-items:center;
+  border-radius:12px;
+  background:linear-gradient(135deg, rgba(43,139,214,.12), rgba(34,197,94,.10));
+  color:#0b2b4b;font-weight:900;
+  border:1px solid rgba(21,32,66,.08);
+  flex:0 0 auto;
+}
+.input-group input{
+  border:0 !important;outline:none;background:transparent;
+  padding:0;margin:0;min-width:0;width:100%;
+  font-size:16px;color:var(--text);
+}
+.btn-login{
+  width:100%;
+  margin-top:14px;
+  padding:12px 16px;
+  background:linear-gradient(135deg, #1f7bd6, #22c55e);
+  box-shadow:0 16px 30px rgba(16,24,40,.14);
+}
+.btn-login:active{filter:brightness(.98)}
+.login-note{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+.login-err{font-size:12px;color:var(--bad);margin-top:8px;text-align:center;min-height:16px}
 
---stBlue:#2563eb;
---stGreen:#16a34a;
---stOrange:#b45309;
---stRed:#dc2626;
---stGray:#475569;
+@media (max-width:520px){
+  .login-wrap{padding:12px;margin:18px auto}
+  .login-card{padding:20px 16px 18px}
+  .login-card h2{font-size:24px}
+}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px}
+.hint.bigError{font-size:18px;font-weight:800;color:var(--bad);}
 
---text:#0f1b3a;
---muted:#5a6aa3;
+    footer{padding:18px;color:var(--muted);text-align:center;font-size:13px}
+    @media (max-width:980px){
+      .pill{display:none}
+    }
 
---brand:#2563eb;
---brand2:#06b6d4;
+    @media (max-width:520px){
+      input,select,textarea{min-width:0;width:100%}
+      .row>div{flex:1 1 100%}
+    }
+  
+    /* ====== Pastel Gen Z touches ====== */
+    .card.stat{border:1px solid rgba(21,32,66,.10);box-shadow:0 14px 34px rgba(16,24,40,.10)}
+    .card.stat.total{background:linear-gradient(135deg,#b9dcff,#eef6ff)}
+    .card.stat.avail{background:linear-gradient(135deg,#baf3d2,#eafff3)}
+    .card.stat.inuse{background:linear-gradient(135deg,#ffd1a1,#fff0df)}
+    .card.stat.issue{background:linear-gradient(135deg,#ffb3bd,#ffe6ea)}
+    .card.stat .hd{border-bottom:1px solid rgba(21,32,66,.06)}
+    /* stat center */
+    .card.stat .bd{display:flex;align-items:center;justify-content:center;text-align:center}
+    .card.stat .metric{justify-content:center}
+    .card.stat .lbl{font-size:13px}
+    .card.stat .n{font-size:34px}
+    .inputSel,.timeSel{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:none}
+    .btn.sm{padding:7px 10px;border-radius:12px;font-size:12px}
+    .btn.danger{background:var(--bad)}
+    .btn.ghost{background:#eef3ff;color:#244}
+    .monthBlock{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+    .monthTitle{padding:10px 14px;font-weight:700;background:rgba(43,139,214,.08);color:#123}
 
---ok:#16a34a;
---bad:#dc2626;
---warn:#f59e0b;
-
---shadow:0 14px 34px rgba(16,24,40,.10);
---radius:18px
+/* ====== Time select width ====== */
+.timeSel{ min-width:130px; font-variant-numeric: tabular-nums; }
+/* ====== Nav tabs active ====== */
+.navbtn{
+  border:1px solid #dbe7ff;
+  background:#f2f7ff;
+  color:#274060;
+  box-shadow:0 6px 16px rgba(15,23,42,.06);
+}
+.navbtn.active{
+  background:linear-gradient(135deg,#76a8ff,#4b86ff);
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 10px 24px rgba(59,130,246,.22);
 }
 
-*{box-sizing:border-box}
-
-body{
-margin:0;
-font-family:Kanit,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-color:var(--text);
-background:linear-gradient(180deg,var(--bg1),var(--bg2));
-min-height:100vh;
-overflow-x:hidden
+/* ====== Stats cards stronger ====== */
+.statCard{
+  border:1px solid rgba(15,23,42,.08) !important;
+  box-shadow:0 14px 28px rgba(15,23,42,.08) !important;
+}
+.statCard .bigNum{
+  display:flex; align-items:center; justify-content:center;
+  height:56px;
+  font-size:42px !important;
 }
 
-header{
-position:sticky;
-top:0;
-z-index:10;
-background:rgba(255,255,255,.94);
-backdrop-filter:saturate(160%) blur(10px);
-border-bottom:1px solid var(--line)
+.miniBtn{
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid rgba(15,23,42,.12);
+  background:#ffffff;
+  cursor:pointer;
+  font-weight:600;
+  font-size:12px;
+}
+.miniBtn:hover{ box-shadow:0 10px 18px rgba(15,23,42,.10); }
+.miniBtn.danger{ background:#fff5f5; border-color:rgba(220,38,38,.25); color:#b91c1c; }
+
+/* ===== Remove border around username ===== */
+#userPill{
+  display:none !important;
+}
+#userPill b{
+  font-weight:600;
+  font-size:14px;
 }
 
-.wrap{
-max-width:1200px;
-margin:0 auto;
-padding:12px 16px
+@media (max-width:520px){
+  .grid4{ gap:10px; }
+
+  .card .hd{ padding:10px 10px; }
+  .card .bd{ padding:10px 10px; }
+
+  .card .hd h2{ font-size:13px; }
+  .chip{ padding:4px 8px; font-size:10px; }
+
+  .card.stat .lbl{ font-size:11px; }
+  .card.stat .n{ font-size:22px; }
 }
 
-.topbar{
-display:flex;
-gap:12px;
-align-items:center;
-justify-content:space-between
+/* ===== Header flexible for mobile ===== */
+.userInline{
+  margin-top:19px;   /* ≈ 0.5 cm */
+  font-size:14px;
+  font-weight:600;
+  color:#1b2a52;
+  line-height:1.3;
 }
-
-.brand{
-display:flex;
-gap:12px;
-align-items:center;
-min-width:0
+.userInline b{
+  font-weight:600;
 }
+.userInline b{ color:var(--text); font-weight:600; }
+.userInline.hide{ display:none; }
 
-.logo{
-display:flex;
-align-items:center;
-justify-content:center
-}
+@media (max-width:520px){
+  .wrap{ padding:10px 12px; }
+  .logo{ width:38px; height:38px; }
+  .logo svg{ width:24px; height:24px; }
 
-.logo img{
-height:68px
-}
-
-.title h1{
-margin:0;
-font-size:20px;
-font-weight:800;
-background:linear-gradient(90deg,#1d4ed8,#7c3aed);
--webkit-background-clip:text;
-color:transparent
-}
-
+  /* ให้ชื่อระบบ/หน่วยงาน “ขึ้นบรรทัดได้” ไม่ตัด ... */
+.title h1,
 .title p{
-margin:2px 0 0;
-color:var(--muted)
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+}
+  .title h1{ font-size:16px; line-height:1.15; }
+  .title p{ font-size:12px; line-height:1.2; }
+
+  /* ซ่อนชื่อฝั่งขวาในมือถือ แล้วใช้ชื่อใต้หัวซ้ายแทน */
+  #userPill{ display:none !important; }
 }
 
-/* ===== Date picker mobile fix ===== */
+/* ===== Date picker: show calendar icon only + DD-MM-YYYY label ===== */
+.dateIconOnly{ width:44px; min-width:44px; padding:10px; border-radius:12px; font-variant-numeric:tabular-nums; }
+.dateIconOnly::-webkit-datetime-edit{ display:none; }
+.dateIconOnly::-webkit-inner-spin-button{ display:none; }
+.dateIconOnly::-webkit-calendar-picker-indicator{ opacity:1; cursor:pointer; }
 
-.dateIconOnly{
-width:44px;
-min-width:44px;
-height:42px;
-padding:6px;
-border-radius:12px;
-border:1px solid var(--line);
-background:#fff;
+    /* === Responsive fix: no horizontal scroll on mobile/tablet/iPad === */
+    html, body{max-width:100%; overflow-x:hidden;}
+    img, svg{max-width:100%; height:auto;}
 
-appearance:auto;
--webkit-appearance:auto;
+    /* Prevent flex children from forcing overflow */
+    .wrap, .topbar, .brand, .right, .grid, .row, .card{min-width:0;}
+
+    /* Tables: force wrap instead of overflow */
+    .tbl{table-layout:fixed;}
+    .tbl thead th, .tbl tbody td{white-space:normal; word-break:break-word; overflow-wrap:anywhere;}
+    .tbl thead th{line-height:1.2;}
+    .tbl tbody td{line-height:1.25;}
+
+    /* Tighten table on small screens */
+    @media (max-width: 900px){
+      .wrap{padding:10px 12px;}
+      .title h1{font-size:18px;}
+      .pill{max-width:260px;}
+    }
+    @media (max-width: 560px){
+      .wrap{padding:10px 10px;}
+      .title h1{font-size:17px;}
+      .title p{font-size:12px;}
+      .pill{display:none;} /* keep header clean and avoid overflow */
+      .btn{padding:9px 12px; font-size:13px;}
+      .tbl thead th{font-size:12px; padding:8px 8px;}
+      .tbl tbody td{font-size:12px; padding:8px 8px;}
+    }
+  
+/* ====== Login (Glass Dark) v18 ====== */
+#secLogin.login-wrap{
+  position:relative;
+  min-height:calc(100vh - 110px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:34px 18px 46px;
+  max-width:none;
+  margin:0;
+}
+#secLogin .login-bg{
+  position:absolute; inset:0;
+  background:
+    radial-gradient(1200px 520px at 18% 18%, rgba(59,130,246,.28), transparent 55%),
+    radial-gradient(900px 480px at 82% 28%, rgba(124,58,237,.18), transparent 55%),
+    radial-gradient(1000px 520px at 70% 88%, rgba(6,182,212,.18), transparent 58%),
+    linear-gradient(135deg, #eef6ff 0%, #f3e8ff 45%, #fff3e6 100%);
+  border-radius:0;
+  filter:saturate(120%);
+}
+#secLogin .orb{position:absolute;border-radius:999px;filter:blur(42px);opacity:.55}
+#secLogin .o1{width:360px;height:360px;left:-120px;top:-90px;background:radial-gradient(circle at 30% 30%, rgba(59,130,246,.55), rgba(59,130,246,0) 60%)}
+#secLogin .o2{width:420px;height:420px;right:-160px;top:-120px;background:radial-gradient(circle at 30% 30%, rgba(124,58,237,.45), rgba(124,58,237,0) 62%)}
+#secLogin .o3{width:460px;height:460px;left:18%;bottom:-210px;background:radial-gradient(circle at 30% 30%, rgba(6,182,212,.40), rgba(6,182,212,0) 62%)}
+
+#secLogin .login-glass{
+  position:relative;
+  width:min(520px, 94vw);
+  padding:26px 26px 22px;
+  border-radius:26px;
+  background:rgba(255,255,255,.86);
+  border:1px solid rgba(17,24,39,.08);
+  box-shadow:0 26px 70px rgba(37,99,235,.18);
+  backdrop-filter: blur(14px);
+}
+#secLogin .login-avatar{
+width:130px;
+height:130px;
+border-radius:999px;
+margin:-80px auto 16px;
+background:white;
+border:1px solid rgba(15,27,58,.10);
+box-shadow:0 18px 38px rgba(37,99,235,.18);
 position:relative;
+display:flex;
+align-items:center;
+justify-content:center;
+overflow:hidden;
 }
 
-/* ซ่อนตัวเลขวันที่แต่ไม่ทำให้ไอคอนหาย */
+.login-avatar img{
+width:95px;
+height:auto;
+object-fit:contain;
+}
+#secLogin .login-title{text-align:center;font-weight:900;letter-spacing:.2px;font-size:30px;line-height:1.1;background:linear-gradient(90deg,#1d4ed8,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
+#secLogin .login-desc{text-align:center;color:rgba(90,106,163,.95);margin:8px auto 18px;max-width:46ch;line-height:1.45;font-size:13px}
+#secLogin .login-fields{margin-top:8px}
+#secLogin .u-field{margin-top:10px}
+#secLogin .u-label{font-size:13px;color:rgba(15,27,58,.78);margin:0 0 8px 2px;font-weight:600}
+#secLogin .u-line{display:flex;padding:12px 6px 10px;border-bottom:1px solid rgba(15,27,58,.14)}
+#secLogin .u-ico{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(37,99,235,.10);border:1px solid rgba(37,99,235,.16);font-weight:900;color:#1d4ed8}
+#secLogin .u-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:16px;padding:6px 2px}
+#secLogin .u-input::placeholder{color:rgba(90,106,163,.75)}
+#secLogin .login-row{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:12px;
+  gap:10px;
+  font-size:12px;
+}
+#secLogin .chk{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+#secLogin .chk input{width:16px;height:16px;accent-color:var(--brand)}
+#secLogin .muted{opacity:.75;white-space:nowrap;color:rgba(90,106,163,.95)}
+#secLogin .btn-login2{width:100%;margin-top:14px;border-radius:14px;padding:12px 14px;font-weight:900;letter-spacing:.8px;background:linear-gradient(90deg,var(--brand) 0%, var(--brand2) 100%);color:white;box-shadow:0 16px 34px rgba(37,99,235,.28);border:1px solid rgba(37,99,235,.18)}
+#secLogin .btn-login2:hover{filter:brightness(1.04)}
+#secLogin .btn-login2:active{transform:translateY(1px) scale(.99)}
+#secLogin .login-err{margin-top:10px;text-align:center;font-size:13px;font-weight:700}
 
-.dateIconOnly::-webkit-datetime-edit{
-opacity:0;
+/* Mobile tweaks */
+@media (max-width:520px){
+  #secLogin.login-wrap{min-height:calc(100vh - 96px);padding:26px 14px 36px}
+  #secLogin .login-glass{padding:22px 18px 18px;border-radius:22px}
+  #secLogin .login-title{font-size:24px}
+  #secLogin .muted{display:none}
 }
 
-/* ซ่อน spin */
+    /* ===== Responsive: Borrow modal form ===== */
+    .modal .row{flex-wrap:wrap; gap:12px;}
+    .modal .row > div{min-width: 160px;}
+    @media (max-width: 900px){
+      .modal .row > div{flex:1 1 240px !important;}
+      .modal .tbl{min-width: 640px;}
+    }
+    @media (max-width: 520px){
+      .modal .row > div{flex:1 1 100% !important; min-width:0;}
+      .modal .tbl{min-width: 720px;} /* allow internal scroll inside modal, but keep page no horizontal scroll */
+      .modal .monthBlock > div[style*="overflow"]{overflow-x:auto;}
+    }
 
-.dateIconOnly::-webkit-inner-spin-button{
-display:none;
+.st{display:inline-flex;align-items:center;justify-content:center;min-width:64px;padding:6px 10px;border-radius:999px;font-weight:700;font-size:12px;letter-spacing:.2px;border:1px solid rgba(2,6,23,.08);background:#fff}
+.st.booked{color:var(--stOrange);background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.22)}
+.st.inuse{color:var(--stOrange);background:rgba(251,146,60,.14);border-color:rgba(251,146,60,.22)}
+.st.returned{color:var(--stBlue);background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.22)}
+.st.cancelled{color:var(--stGray);background:rgba(148,163,184,.18);border-color:rgba(148,163,184,.25)}
+.st.issue{color:var(--stRed);background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.22)}
+
+@media (max-width:520px){.logo img{height:56px}}
+
+/* === Dashboard stats: always fully visible on mobile === */
+.grid4 .card{min-width:0;max-width:none;width:auto}
+.grid4 .card.stat{border-radius:18px;box-shadow:0 10px 26px rgba(15,23,42,.10);}
+.grid4 .card.stat .hd{justify-content:center;text-align:center}
+.grid4 .card.stat .hd h2{width:100%;text-align:center}
+.grid4 .card.stat .bd{text-align:center}
+.grid4 .card.stat .metric{justify-content:center}
+.grid4 .card.stat .metric .n{line-height:1}
+.grid4 .chip{display:none}
+@media(max-width:480px){
+  .grid4{gap:10px}
+  .grid4 .card.stat{padding:12px 10px}
+  .grid4 .card.stat .hd h2{font-size:14px}
+  .grid4 .card.stat .lbl{font-size:12px}
+  .grid4 .card.stat .metric .n{font-size:26px}
 }
 
-/* แสดงไอคอนปฏิทิน */
-
-.dateIconOnly::-webkit-calendar-picker-indicator{
-opacity:1;
-display:block;
-cursor:pointer;
-width:24px;
-height:24px;
+/* ===== v31: Mobile stats 1 row (4 cards) no horizontal scroll ===== */
+.grid4{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:8px !important;
+  padding:6px 2px 10px !important;
+}
+.grid4 > .card{
+  min-width:0 !important;
+  max-width:none !important;
+  width:auto !important;
+  flex:none !important;
+  scroll-snap-align:unset !important;
 }
 
-/* ===== responsive ===== */
-
-@media(max-width:768px){
-
-.wrap{
-padding:10px
+@media (max-width: 520px){
+  .grid4{gap:6px !important;}
+  .grid4 .card.stat{border-radius:16px !important;}
+  .grid4 .card.stat .hd{padding:10px 8px !important;}
+  .grid4 .card.stat .bd{padding:10px 8px !important;}
+  .grid4 .card.stat .hd h2{
+    font-size:12px !important;
+    letter-spacing:.1px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
+    text-align:center;
+    width:100%;
+  }
+  .grid4 .card.stat .metric{gap:6px;}
+  .grid4 .card.stat .lbl{font-size:11px !important;}
+  .grid4 .card.stat .metric .n{font-size:22px !important; line-height:1.0;}
 }
 
-.logo img{
-height:56px
+/* super small phones */
+@media (max-width: 380px){
+  .grid4{gap:5px !important;}
+  .grid4 .card.stat .hd{padding:9px 6px !important;}
+  .grid4 .card.stat .bd{padding:9px 6px !important;}
+  .grid4 .card.stat .hd h2{font-size:11px !important;}
+  .grid4 .card.stat .metric .n{font-size:20px !important;}
 }
 
-.title h1{
-font-size:18px
+/* ===== Mobile header fix: prevent Admin button off-screen ===== */
+@media (max-width: 520px){
+  .topbar{ flex-wrap:wrap; gap:8px; }
+  .brand{ flex:1 1 100%; min-width:0; }
+  .right{ flex:1 1 100%; justify-content:flex-end; }
+  .right .btn{ flex:0 0 auto; }
 }
 
+/* ===== Date label chips ===== */
+.dateIconOnly{
+  max-width: 140px;
+}
+.chip{
+  display:inline-flex;
+  align-items:center;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#f6f9ff;
+  color:#203a63;
+  font-weight:600;
+  font-size:13px;
+  line-height:1;
 }
 
+
+    /* ===== Status (text color only) ===== */
+    .st{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);font-weight:700;font-size:12px;background:#fff;white-space:nowrap}
+    .st-booked{color:#b45309}      /* ส้ม */
+    .st-inuse{color:#16a34a}       /* เขียว */
+    .st-returned{color:#2563eb}    /* ฟ้า/น้ำเงิน */
+    .st-cancelled{color:#7c3aed}   /* ม่วง */
+    .st-wait{color:#dc2626}        /* แดง */
+    .st-damaged,.st-lost{color:#dc2626}
+
+    /* ===== Toast ===== */
+    #toastBox{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+    .toastItem{pointer-events:none;min-width:240px;max-width:92vw;padding:10px 12px;border-radius:14px;background:#0f172a;color:#fff;font-weight:600;box-shadow:0 10px 30px rgba(15,23,42,.25);opacity:0;transform:translateY(-6px);transition:all .18s ease}
+    .toastItem.show{opacity:1;transform:translateY(0)}
+    .toastItem.err{background:#7f1d1d}
 </style>
 </head>
-
 <body>
-
 <header>
-<div class="wrap topbar">
-
-<div class="brand">
-
-<div class="logo">
-<img src="logo.png">
-</div>
-
-<div class="title">
-<h1>ระบบยืม-คืน Notebook</h1>
-<p>ภาควิชาวิสัญญีวิทยา คณะแพทยศาสตร์ศิริราชพยาบาล</p>
-</div>
-
-</div>
-
-</div>
+  <div class="wrap topbar">
+    <div class="brand">
+      <div class="logo"><img src="logo1.png" alt="Siriraj Anesthesiology Logo"></div>
+      <div class="title">
+          <h1>ระบบยืม-คืน Notebook</h1>
+          <p>ภาควิชาวิสัญญีวิทยา คณะแพทยศาสตร์ศิริราชพยาบาล</p>
+          <div id="userInline" class="userInline hide"></div>
+      </div>
+    </div>
+    <div class="right">
+      <button class="btn ghost" id="btnLogout" onclick="logout()" style="display:none">Logout</button>
+      <button class="btn" id="btnAdminTop" onclick="openAdmin()" style="display:none">Admin</button>
+    </div>
+  </div>
+  <nav>
+    <div class="wrap navrow" id="navRow" style="display:none">
+      <button class="navbtn active" id="tabBorrow" onclick="openBorrow()">ยืม Notebook</button>
+      <button class="navbtn" id="tabHistory" onclick="openHistory()">ประวัติยืม</button>
+    </div>
+  </nav>
 </header>
 
-<div class="wrap">
+<main>
+  <section id="secLogin" class="login-wrap">
+  <div class="login-bg">
+    <div class="orb o1"></div>
+    <div class="orb o2"></div>
+    <div class="orb o3"></div>
+  </div>
 
-<h3>รายงานการใช้ Notebook</h3>
-
-<div style="display:flex;gap:10px;align-items:center">
-
-<label>วันที่</label>
-
-<input type="date" class="dateIconOnly">
-
-<button style="
-background:#2563eb;
-color:#fff;
-border:none;
-border-radius:10px;
-padding:10px 16px;
-font-family:Kanit;
-cursor:pointer">
-แสดงรายงาน
-</button>
-
+  <div class="login-glass" role="region" aria-label="เข้าสู่ระบบ">
+    <div class="login-avatar">
+  <img src="logoNB.png" alt="Siriraj Anesthesiology">
 </div>
 
+    <div class="login-title">เข้าสู่ระบบ</div>
+    <div class="login-desc"></div>
+
+    <div class="login-fields">
+      <div class="u-field">
+        <div class="u-label">กรุณากรอกเลข SAP ของท่าน</div>
+        <div class="u-line">
+          <input id="loginSAP" class="u-input" placeholder="เช่น 10010001" inputmode="numeric" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="login-row">
+        <label class="chk">
+          <input type="checkbox" id="rememberSap" />
+          <span>Remember me</span>
+        </label>
+      </div>
+
+      <button class="btn btn-login2" onclick="doLogin()">LOGIN</button>
+
+      <div id="loginErr" class="login-err"></div>
+    </div>
+  </div>
+</section>
+
+  <section id="secDash" class="hide">
+    <div class="grid4">
+      <div class="card stat total"><div class="hd"><h2>ทั้งหมด</h2><span class="chip">Total</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mTotal">0</div></div></div></div></div>
+      <div class="card stat avail"><div class="hd"><h2>พร้อมให้ยืม</h2><span class="chip ok">Available</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mAvail">0</div></div></div></div></div>
+      <div class="card stat inuse"><div class="hd"><h2>ถูกยืมอยู่</h2><span class="chip warn">In use</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mInuse">0</div></div></div></div></div>
+      <div class="card stat issue"><div class="hd"><h2>ชำรุด/สูญหาย</h2><span class="chip bad">Issue</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mIssue">0</div></div></div></div></div>
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="card">
+      <div class="hd">
+        <h2>รายงานการใช้ Notebook</h2>
+        <div class="row" style="gap:10px">
+          <div>
+            <label>วันที่</label>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input type="date" id="fDate" class="dateIconOnly" lang="en-GB">
+              <div class="chip" id="fDateLabel">-</div>
+            </div>
+          </div>
+          <div style="align-self:end"><button class="btn" onclick="loadUsage()">แสดงรายงาน</button></div>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="muted" style="margin-bottom:8px">* แสดงรายการยืม-คืนทั้งหมดของวันที่เลือก</div>
+        <div style="overflow:auto">
+          <table class="tbl" id="tblUsage">
+            <thead><tr><th>รหัสเครื่อง</th><th>ผู้ยืม</th><th>วดป</th><th>เวลาเริ่ม-สิ้นสุด</th><th>คืน/ยกเลิก</th><th>สถานะ</th><th>สถานที่</th></tr></thead>
+            <tbody><tr><td colspan="7" class="muted">ยังไม่มีข้อมูล</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Copyright © 2025 ระบบยืม-คืน Notebook | ภาควิชาวิสัญญีวิทยา คณะแพทยศาสตร์ศิริราชพยาบาล | 
+  <span style="font-size:10px;opacity:.85">Version 1.1</span></footer>
+
+<div class="backdrop" id="backdrop" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><h3 id="modalTitle">Modal</h3><button class="x" onclick="hideModal()">✕</button></div>
+    <div class="mbd" id="modalBody"></div>
+  </div>
 </div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcsxtEi0ZPj0-K0gIdtunfTJFyr40I9YNqzQoE1_OSj1Sql-AOxMuh1dY3TytvE5E0EQ/exec"; // ใส่ /exec
+const STORAGE_KEY = "nbk_session_v1";
+const state = { user:null, sap:null, isAdmin:false };
+
+// Prefill remembered SAP
+try{
+  const rem = localStorage.getItem('nb_rem_sap')==='1';
+  const last = localStorage.getItem('nb_last_sap')||'';
+  const cb = document.getElementById('rememberSap');
+  const inp = document.getElementById('loginSAP');
+  if(cb) cb.checked = rem;
+  if(inp && rem && last) inp.value = last;
+}catch(_e){}
+
+
+function pad2(n){ return String(Number(n)).padStart(2,"0"); }
+
+function timeToMin_(hhmm){
+  const s=String(hhmm||'').trim();
+  const m=s.match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return 0;
+  const h=Math.min(23,Math.max(0,Number(m[1])));
+  const mi=Math.min(59,Math.max(0,Number(m[2])));
+  return h*60+mi;
+}
+
+function deviceNo_(code){
+  const s=String(code||'').trim();
+  const m=s.match(/(\d+)(?!.*\d)/); // last number
+  return m? Number(m[1]) : Number.POSITIVE_INFINITY;
+}
+
+function cmpDeviceCode_(a,b){
+  const na=deviceNo_(a), nb=deviceNo_(b);
+  if(isFinite(na) && isFinite(nb) && na!==nb) return na-nb;
+  return String(a||'').localeCompare(String(b||''));
+}
+function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function setDefaultFilters(){
+  const d=document.getElementById('fDate');
+  if(d && !d.value) d.value=todayISO();
+  updateDateLabel_();
+}
+
+function updateDateLabel_(){
+  const d=document.getElementById('fDate');
+  const lab=document.getElementById('fDateLabel');
+  if(!d||!lab) return;
+  lab.textContent = d.value ? fmtDMY(d.value) : '-';
+}
+
+// ✅ update date label instantly when user picks a date
+(function bindDateLabel(){
+  try{
+    const d=document.getElementById('fDate');
+    if(!d) return;
+    d.addEventListener('input', updateDateLabel_);
+    d.addEventListener('change', updateDateLabel_);
+  }catch(_){ }
+})();
+
+
+function jsonp(action, params){
+  return new Promise((resolve,reject)=>{
+    if(!SCRIPT_URL || SCRIPT_URL.includes('PASTE_YOUR')) return reject(new Error('SCRIPT_URL ยังไม่ถูกตั้งค่า'));
+    const cb='cb_'+Math.random().toString(36).slice(2);
+    const qs=new URLSearchParams({action,callback:cb,_:Date.now().toString()});
+    Object.keys(params||{}).forEach(k=>{
+      const v=params[k]; if(v===undefined||v===null) return;
+      qs.append(k, typeof v==='string' ? v : JSON.stringify(v));
+    });
+    const src=SCRIPT_URL + (SCRIPT_URL.includes('?')?'&':'?') + qs.toString();
+    const script=document.createElement('script');
+    const timer=setTimeout(()=>{ cleanup(); reject(new Error('API timeout')); },15000);
+    function cleanup(){ clearTimeout(timer); try{ delete window[cb]; }catch(_){}; if(script.parentNode) script.parentNode.removeChild(script); }
+    window[cb]=(data)=>{ cleanup(); resolve(data); };
+    script.onerror=()=>{ cleanup(); reject(new Error('โหลด API ไม่สำเร็จ (ตรวจสอบ Deploy /exec และ Anyone)')); };
+    script.src=src; document.body.appendChild(script);
+  });
+}
+
+
+/* ===== Availability helper (case-safe) ===== */
+async function checkAvailability_(payload){
+  // backend action name may vary by case; try both to be safe
+  let res=null;
+  try{
+    res = await jsonp('checkAvailability', payload);
+    if(res && (res.ok || res.error || res.conflict!==undefined)) return res;
+  }catch(_e){ /* fallthrough */ }
+  try{
+    res = await jsonp('checkavailability', payload);
+    return res;
+  }catch(e){
+    return { ok:false, error: e && (e.message||String(e)) };
+  }
+}
+
+
+
+/* ========== Time (30-min) & Devices helpers ========== */
+function buildTimeOptions(){
+  const opts=[];
+  // 06:00 ถึง 18:00 (ทุก 30 นาที) รวม 18:00
+  for(let min=6*60; min<=18*60; min+=30){
+    const h=Math.floor(min/60), m=min%60;
+    const t=pad2(h)+':'+pad2(m);
+    opts.push(`<option value="${t}">${t}</option>`);
+  }
+  return opts.join('');
+}
+
+function timeToMin(t){
+  // "HH:MM" -> minutes (number). return NaN if invalid
+  t = String(t||'').trim();
+  const m = t.match(/^\s*(\d{1,2})\s*:\s*(\d{2})\s*$/);
+  if(!m) return NaN;
+  return (Number(m[1])*60) + Number(m[2]);
+}
+
+function initTimeSelect(id, value){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.innerHTML = buildTimeOptions();
+  if(value) el.value=value;
+}
+
+function setActiveNav(which){
+  ['Borrow','Return','History'].forEach(k=>{
+    const el=document.getElementById('tab'+k);
+    if(el) el.classList.toggle('active', k.toLowerCase()===which);
+  });
+}
+let _devicesCache=null;
+async function loadDevices(){
+  if(_devicesCache) return _devicesCache;
+  const res=await jsonp('listDevices',{});
+  if(res && res.ok) _devicesCache = res.devices || [];
+  else _devicesCache = [];
+  return _devicesCache;
+}
+
+function fillDeviceSelects(){
+  loadDevices().then(list=>{
+    const opts=['<option value="">-- เลือก --</option>']
+      .concat(list.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
+    const b=document.getElementById('bDevice');
+    const r=document.getElementById('rDevice');
+    if(b) b.innerHTML=opts.join('');
+    if(r) r.innerHTML=opts.join('');
+  });
+}
+
+let _locationsCache=null;
+async function loadLocations(){
+  if(_locationsCache) return _locationsCache;
+  const res=await jsonp('listlocations',{});
+  if(res && res.ok) _locationsCache = res.locations || [];
+  else _locationsCache = [];
+  return _locationsCache;
+}
+function fillLocationSelect(){
+  const sel=document.getElementById('bLocationSel');
+  if(!sel) return;
+  loadLocations().then(list=>{
+    const opts=['<option value="">-- เลือก --</option>']
+      .concat(list.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`));
+    sel.innerHTML=opts.join('');
+  }).catch(err=>{
+    // ถ้าโหลดสถานที่ไม่สำเร็จ ให้ยังใช้งานได้ (อย่างน้อยมี "อื่นๆ")
+    try{ console.error(err); }catch(_){}
+    sel.innerHTML = '<option value="">-- เลือก --</option><option value="อื่นๆ">อื่นๆ</option>';
+    try{ toast('ไม่สามารถโหลดสถานที่ได้ (ตรวจสอบชีท Location / Deploy /exec)'); }catch(_){}
+  });
+  sel.onchange=()=>{
+    const other=document.getElementById('bLocationOther');
+    if(!other) return;
+    const v=sel.value;
+    const isOther = (v==='อื่นๆ' || v==='อื่น' || v.toLowerCase()==='other');
+    other.style.display = isOther ? '' : 'none';
+    if(!isOther) other.value='';
+  };
+}
+
+function getBorrowLocation_(){
+  const sel=document.getElementById('bLocationSel');
+  const other=document.getElementById('bLocationOther');
+  const v=(sel && sel.value) ? String(sel.value).trim() : '';
+  if(v==='อื่นๆ' || v==='อื่น' || v.toLowerCase()==='other'){
+    return (other && other.value) ? String(other.value).trim() : '';
+  }
+  return v;
+}
+
+function fillDeviceSelect(selectId, allowBlank){
+  const el=document.getElementById(selectId);
+  if(!el) return;
+  const devs=_devicesCache||[];
+  const opts = []
+  if(allowBlank) opts.push('<option value="">-- เลือก --</option>');
+  devs.forEach(d=>{
+    const raw = (typeof d==='string') ? d : (d.code||d.DeviceCode||d.device||'');
+    const code = (raw||'').toString().toUpperCase();
+    if(!code) return;
+    opts.push(`<option value="${escapeHtml(code)}">${escapeHtml(code)}</option>`);
+  });
+  el.innerHTML = opts.join('') || '<option value="">(ไม่มีข้อมูล)</option>';
+}
+
+function saveSession(sess){ localStorage.setItem(STORAGE_KEY, JSON.stringify(sess)); }
+function loadSession(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); }catch(_){ return null; } }
+function clearSession(){ localStorage.removeItem(STORAGE_KEY); }
+
+
+function ensureToastBox_(){
+  let box=document.getElementById('toastBox');
+  if(!box){
+    box=document.createElement('div');
+    box.id='toastBox';
+    document.body.appendChild(box);
+  }
+  return box;
+}
+// toast(message, isError=false)
+function toast(msg, isError){
+  try{
+    const box=ensureToastBox_();
+    const it=document.createElement('div');
+    it.className='toastItem'+(isError?' err':'');
+    it.textContent=String(msg||'');
+    box.appendChild(it);
+    requestAnimationFrame(()=>it.classList.add('show'));
+    setTimeout(()=>{ it.classList.remove('show'); }, 2400);
+    setTimeout(()=>{ try{ it.remove(); }catch(_){ } }, 2700);
+  }catch(_){
+    alert(msg);
+  }
+}
+
+function escapeHtml(s){ s=(s==null)?'':String(s); return s.replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+
+
+function fmtDMY(v){
+  // Accept yyyy-mm-dd, Date, or any parseable string; return DD-MM-YYYY (AD) or '-'
+  if(v==null || v==='') return '-';
+  const s=String(v).trim();
+  // handle "yyyy-mm-dd ..." or "yyyy-mm-dd"
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+  const d=new Date(s);
+  if(!isNaN(d.getTime())){
+    return `${pad2(d.getDate())}-${pad2(d.getMonth()+1)}-${d.getFullYear()}`;
+  }
+  return s || '-';
+}
+
+
+function formatReturnDT_(r){
+  // ใช้ทั้งคืนจริง และยกเลิกจอง (ยึด ReturnDate/ReturnTime ในชีตเดียวกัน)
+  const rd = (r && (r.returnDate||r.return_date||r.retDate||r.ReturnDate)) || '';
+  const rt = (r && (r.returnTime||r.return_time||r.retTime||r.ReturnTime)) || '';
+  if(!rd && !rt) return '-';
+  const dPart = rd ? fmtDMY(rd) : '-';
+  const tPart = rt ? String(rt) : '';
+  return (tPart ? (dPart + ' ' + tPart) : dPart);
+}
+
+function fmtDMYSlash(v){
+  // return DD/MM/YYYY (AD)
+  if(v==null || v==='') return '-';
+  const s=String(v).trim();
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[3]}/${m[2]}/${m[1]}`;
+  const d=new Date(s);
+  if(!isNaN(d.getTime())){
+    return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;
+  }
+  return s || '-';
+}
+
+function updateBorrowDateLabel_(){
+  const d=document.getElementById('bDate');
+  const lab=document.getElementById('bDateLabel');
+  if(!d||!lab) return;
+  lab.textContent = d.value ? fmtDMYSlash(d.value) : '-';
+}
+function updateReturnDateLabel_(){
+  const d=document.getElementById('rDate');
+  const lab=document.getElementById('rDateLabel');
+  if(!d||!lab) return;
+  lab.textContent = d.value ? fmtDMYSlash(d.value) : '-';
+}
+function fmtDMYWithTime(v){
+  if(v==null || v==='') return '-';
+  const s=String(v).trim();
+  // if contains date then time
+  const m=s.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})/);
+  if(m) return `${fmtDMY(m[1])} ${pad2(m[2].split(':')[0])}:${m[2].split(':')[1]}`;
+  return fmtDMY(s);
+}
+
+
+function formatReturnDT_(r){
+  // แสดงคืน/ยกเลิกเป็น "DD/MM/YYYY HH:MM" ถ้ามี ไม่งั้น "-"
+  if(!r) return '-';
+  const rd = (r.returnDate ?? r.ReturnDate ?? r.return_date ?? '').toString().trim();
+  const rt = (r.returnTime ?? r.ReturnTime ?? r.return_time ?? '').toString().trim();
+  const rdt = (r.returnDT ?? r.ReturnDT ?? '').toString().trim();
+
+  if(rdt) return fmtDMYWithTime(rdt);
+  if(rd && rt) return fmtDMYWithTime(`${rd} ${rt}`);
+  if(rd) return fmtDMY(rd);
+  return '-';
+}
+
+
+function applyLoggedInUI(){
+  const pill=document.getElementById('userPill');
+  const userInline=document.getElementById('userInline');
+  const nav=document.getElementById('navRow');
+  const logoutBtn=document.getElementById('btnLogout');
+  const adminTop=document.getElementById('btnAdminTop');
+  const loginSec=document.getElementById('secLogin');
+  const dash=document.getElementById('secDash');
+
+  if(state.user && state.sap){
+    // ขวาบน (เดสก์ท็อป)
+    if(pill) pill.innerHTML=`<b>${escapeHtml(state.user)}</b>`;
+
+    // ซ้ายใต้หัว (มือถือ/ทุกจอ)
+    if(userInline){
+      userInline.innerHTML = `<b>${escapeHtml(state.user)}</b>`;
+      userInline.classList.remove('hide');
+    }
+
+    nav.style.display='';
+    logoutBtn.style.display='';
+    adminTop.style.display= state.isAdmin ? '' : 'none';
+    loginSec.classList.add('hide');
+    dash.classList.remove('hide');
+  }else{
+    if(pill) pill.innerHTML='<span class="muted">ยังไม่ได้เข้าสู่ระบบ</span>';
+    if(userInline){
+      userInline.innerHTML='';
+      userInline.classList.add('hide');
+    }
+
+    nav.style.display='none';
+    logoutBtn.style.display='none';
+    adminTop.style.display='none';
+    loginSec.classList.remove('hide');
+    dash.classList.add('hide');
+  }
+}
+async function doLogin(){
+  const s=(document.getElementById('loginSAP').value||'').trim();
+
+  // remember SAP (optional)
+  const _rem=document.getElementById('rememberSap');
+  try{
+    if(_rem && _rem.checked){
+      localStorage.setItem('nb_rem_sap','1');
+      localStorage.setItem('nb_last_sap', s);
+    }else{
+      localStorage.removeItem('nb_rem_sap');
+      localStorage.removeItem('nb_last_sap');
+    }
+  }catch(_e){}
+
+  const err=document.getElementById('loginErr');
+  err.textContent='';
+  err.style.color='';
+
+  if(!s){
+    err.style.color='#fecaca';
+    err.textContent='กรุณากรอกเลข SAP ของท่าน';
+    return;
+  }
+
+  // Show checking / logging-in message early
+  err.style.color='#191970';
+  err.innerHTML='⏳ กำลังเข้าสู่ระบบ';
+
+  try{
+    const res=await jsonp('login',{sap:s});
+
+    // Not found / not allowed
+    if(!res || !res.ok){
+      err.style.color='#FF0000';
+      err.textContent='ไม่พบข้อมูลของท่าน โปรดติดต่อ admin';
+      return;
+    }
+
+    // Found
+    err.style.color='#4682B4';
+    err.innerHTML='✔️ กำลังเข้าสู่ระบบ';
+
+    state.user=res.user; state.sap=res.sap; state.isAdmin=!!res.isAdmin;
+    saveSession({user:state.user,sap:state.sap,isAdmin:state.isAdmin});
+
+    applyLoggedInUI(); setDefaultFilters();
+  var _d=document.getElementById('fDate'); if(_d){ _d.addEventListener('change', updateDateLabel_); _d.addEventListener('input', updateDateLabel_); }
+        initTimeSelect('fStart','06:00');
+    initTimeSelect('fEnd','18:00');
+    loadDevices().catch(()=>{});
+    await refreshDashboard();
+
+  }catch(e){
+    err.style.color='#FF0000';
+    err.textContent='เกิดข้อผิดพลาดในการเชื่อมต่อ';
+  }
+}
+
+function logout(){ clearSession(); state.user=null; state.sap=null; state.isAdmin=false; applyLoggedInUI(); }
+
+function statusChip(status, overdue){
+  status=String(status||'').toUpperCase();
+
+  // Normalize
+  if(status==='WAIT_RET' || status==='WAIT_RETURNED') status='WAIT_RETURN';
+
+  if(status==='BOOKED')     return '<span class="st st-booked">จอง</span>';
+  if(status==='IN_USE')     return '<span class="st st-inuse">ใช้งานอยู่</span>';
+  if(status==='WAIT_RETURN')return '<span class="st st-wait">รอคืน</span>';
+  if(status==='RETURNED')   return '<span class="st st-returned">คืนแล้ว</span>';
+  if(status==='CANCELLED')  return '<span class="st st-cancelled">ยกเลิก</span>';
+  if(status==='DAMAGED')    return '<span class="st st-damaged">ชำรุด</span>';
+  if(status==='LOST')       return '<span class="st st-lost">สูญหาย</span>';
+  return `<span class="st">${escapeHtml(status||'-')}</span>`;
+}
+
+function normalizeStatus_(status){
+  let s=String(status||'').trim().toUpperCase();
+  if(s==='INUSE') s='IN_USE';
+  if(s==='WAIT_RET' || s==='WAIT_RETURNED') s='WAIT_RETURN';
+  if(s==='BOOK') s='BOOKED';
+  if(s==='CANCEL' || s==='CANCELED') s='CANCELLED';
+  return s;
+}
+
+
+async function refreshDashboard(){
+  try{
+    const res=await jsonp('dashboard',{sap:state.sap});
+    if(res&&res.ok){
+      document.getElementById('mTotal').textContent=res.metrics.total??0;
+      document.getElementById('mAvail').textContent=res.metrics.available??0;
+      document.getElementById('mInuse').textContent=res.metrics.inuse??0;
+      document.getElementById('mIssue').textContent=res.metrics.issue??0;
+    }
+    await loadUsage();
+  }catch(e){ console.warn(e); }
+}
+
+async function loadUsage(){
+  setDefaultFilters();
+  const date=document.getElementById('fDate').value;
+  const tb=document.querySelector('#tblUsage tbody');
+  tb.innerHTML='<tr><td colspan="7" class="muted">กำลังโหลด...</td></tr>';
+  try{
+    const res=await jsonp('listUsage',{date});
+    if(!res||!res.ok){ tb.innerHTML='<tr><td colspan="7" class="muted">โหลดข้อมูลไม่สำเร็จ</td></tr>'; return; }
+    const rows=res.rows||[];
+    if(!rows.length){ tb.innerHTML='<tr><td colspan="7" class="muted">ยังไม่มีข้อมูล</td></tr>'; return; }
+
+    // ✅ เรียง: รหัสเครื่องน้อย→มาก และเวลาเริ่ม/สิ้นสุดภายในรหัสเครื่อง
+    rows.sort((a,b)=>{
+      const dc=cmpDeviceCode_(a.device,b.device);
+      if(dc!==0) return dc;
+      const sa=timeToMin_(a.start), sb=timeToMin_(b.start);
+      if(sa!==sb) return sa-sb;
+      const ea=timeToMin_(a.end), eb=timeToMin_(b.end);
+      if(ea!==eb) return ea-eb;
+      return 0;
+    });
+
+    tb.innerHTML=rows.map(r=>{
+      const loc = r.location || '-';
+      return `<tr>
+        <td><b>${escapeHtml(r.device)}</b></td>
+        <td>${escapeHtml(r.borrower||'-')}</td>
+        <td>${escapeHtml(fmtDMY(r.date||''))}</td>
+        <td>${escapeHtml((r.start||'-')+' - '+(r.end||'-'))}</td>
+        <td>${escapeHtml(formatReturnDT_(r))}</td>
+        <td>${statusChip(r.status,r.overdue)}</td>
+        <td>${escapeHtml(loc)}</td>
+      </tr>`;
+    }).join('');
+  }catch(e){ tb.innerHTML=`<tr><td colspan="7" class="muted">เชื่อมต่อไม่ได้: ${escapeHtml(e.message||String(e))}</td></tr>`; }
+}
+
+function setActiveTab(id){ ['tabBorrow','tabReturn','tabHistory'].forEach(t=>{ const el=document.getElementById(t); if(el) el.classList.toggle('active',t===id); }); }
+
+function showModal(title, html){
+  document.getElementById('modalTitle').textContent=title;
+  document.getElementById('modalBody').innerHTML=html;
+  document.getElementById('backdrop').classList.add('show');
+  if(title.includes('ยืมอุปกรณ์')) setTimeout(refreshBorrowList,50);
+}
+function hideModal(){ document.getElementById('backdrop').classList.remove('show'); }
+function closeModal(ev){ if(ev.target&&ev.target.id==='backdrop') hideModal(); }
+
+function borrowFormHtml(){
+  const d=todayISO();
+  return `
+    <div class="row" style="margin-bottom:12px">
+      <div style="flex:1 1 160px"><label>รหัสเครื่อง</label><select id="bDevice" class="inputSel"><option value="">กำลังโหลด...</option></select></div>
+      <div style="flex:0 0 220px">
+        <label>วันที่ยืม/จอง</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="date" id="bDate" class="dateIconOnly" value="${d}" lang="en-GB">
+          <div class="chip" id="bDateLabel">-</div>
+        </div>
+      </div>
+      <div style="flex:0 0 150px"><label>เวลาเริ่ม</label><select id="bStart" class="timeSel"></select></div>
+      <div style="flex:0 0 150px"><label>เวลาสิ้นสุด</label><select id="bEnd" class="timeSel"></select></div>
+    </div>
+
+    <div class="row" style="margin-bottom:12px">
+      <div style="flex:1 1 160px;max-width:220px"><label>สถานที่ใช้งาน</label><select id="bLocationSel" class="inputSel"><option value="">กำลังโหลด...</option></select><input id="bLocationOther" class="input" style="margin-top:8px;display:none" placeholder="ระบุสถานที่เพิ่มเติม"></div>
+      <div style="flex:1 1 520px"><label>วัตถุประสงค์ใช้งาน</label><input id="bPurpose" class="input" placeholder="เช่น ประชุม/สอน/งานวิจัย"></div>
+    </div>
+    <div class="row" style="margin-bottom:12px"><div style="flex:1 1 100%"><label>หมายเหตุ</label><textarea id="bNote" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea></div></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" id="btnBorrowSubmit" onclick="submitBorrow()">บันทึกการจอง</button></div>
+    <div id="borrowMsg" class="hint" style="margin-top:12px"></div>
+  `;
+}
+
+async function openBorrow(){
+  setActiveNav('borrow'); 
+  setActiveTab('tabBorrow'); 
+  showModal('ยืม Notebook', borrowFormHtml());
+  wireBorrowLiveCheck_();
+  setTimeout(()=>{ _runBorrowAvailabilityCheck_({silent:true}); }, 0);
+
+  // date label DD/MM/YYYY
+  try{
+    updateBorrowDateLabel_();
+    const d=document.getElementById('bDate');
+    if(d){ d.addEventListener('input', updateBorrowDateLabel_); d.addEventListener('change', updateBorrowDateLabel_); }
+  }catch(_){}
+
+  try{ await loadDevices(); fillDeviceSelect('bDevice', true); }catch(_){ }
+  initTimeSelect('bStart','06:00'); 
+  initTimeSelect('bEnd','18:00');
+  await refreshBorrowList();
+  fillDeviceSelects();
+  fillLocationSelect();
+}
+
+async function openReturn(){
+  setActiveNav('return'); 
+  setActiveTab('tabReturn'); 
+  showModal('คืน Notebook', returnFormHtml());
+
+  // date label DD/MM/YYYY
+  try{
+    updateReturnDateLabel_();
+    const d=document.getElementById('rDate');
+    if(d){ d.addEventListener('input', updateReturnDateLabel_); d.addEventListener('change', updateReturnDateLabel_); }
+  }catch(_){}
+
+  try{ await loadDevices(); fillDeviceSelect('rDevice', true); }catch(_){ }
+  fillDeviceSelects();
+}
+
+async function openHistory(){
+  setActiveNav('history');
+  setActiveTab('tabHistory');
+
+  const now=new Date();
+  const beNow = now.getFullYear()+543;
+
+  const monthsTH=['ทั้งหมด','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const mNow = now.getMonth()+1;
+
+  const yOpts = [beNow, beNow-1, beNow-2].map(y=>`<option value="${y}">${y}</option>`).join('');
+  const mOpts = Array.from({length:13},(_,i)=>`<option value="${i}">${monthsTH[i]}</option>`).join('');
+
+  showModal('ประวัติยืม',`
+    <div class="row" style="gap:10px;align-items:end;margin-bottom:10px">
+      <div style="flex:0 0 180px">
+        <label>ปี (พ.ศ.)</label>
+        <select id="hYearBE" class="inputSel">${yOpts}</select>
+      </div>
+      <div style="flex:0 0 180px">
+        <label>เดือน</label>
+        <select id="hMonth" class="inputSel">${mOpts}</select>
+      </div>
+      <div><button class="btn" onclick="loadHistoryYear()">แสดง</button></div>
+    </div>
+    <div id="historyWrap" class="muted">กำลังโหลด...</div>
+  `);
+
+  document.getElementById('hYearBE').value=String(beNow);
+  document.getElementById('hMonth').value=String(mNow);
+  await loadHistoryYear();
+}
+
+
+
+let _editRowId=null;
+
+async function editLoan(rowId){
+  rowId=String(rowId||'').trim();
+  if(!rowId) return;
+  try{
+    const res=await jsonp('getRow',{sheet:'Loans', sap:state.sap, rowId});
+    if(!res||!res.ok){ alert(res?.error||'โหลดข้อมูลไม่สำเร็จ'); return; }
+    const r=res.row||{};
+    _editRowId=rowId;
+
+    // เติมฟอร์ม
+    document.getElementById('bDevice').value = r.DeviceCode || '';
+    document.getElementById('bDate').value   = r.BorrowDate || '';
+    initTimeSelect('bStart', r.StartTime || '06:00');
+    initTimeSelect('bEnd', r.EndTime || '18:00');
+    document.getElementById('bPurpose').value = r.Purpose || '';
+    // location
+    const sel=document.getElementById('bLocationSel');
+    const other=document.getElementById('bLocationOther');
+    const loc = (r.Location||'').trim();
+    if(sel){
+      // ถ้าไม่อยู่ใน list ให้เลือก "อื่นๆ"
+      const has=[...sel.options].some(o=>o.value===loc);
+      if(has){ sel.value=loc; if(other){ other.style.display='none'; other.value=''; } }
+      else { sel.value='อื่นๆ'; if(other){ other.style.display=''; other.value=loc; } }
+    }
+    document.getElementById('bNote').value = r.Note || '';
+
+    // เปลี่ยนปุ่ม
+    const btn=document.getElementById('btnBorrowSubmit');
+    if(btn) btn.textContent='บันทึกการแก้ไข';
+  }catch(e){
+    alert(e.message||String(e));
+  }
+}
+
+
+async function returnLoan(rowId){
+  rowId=Number(rowId||0);
+  if(!rowId) return;
+  const ok = confirm('ยืนยันการคืน Notebook รายการนี้?');
+  if(!ok) return;
+  try{
+    toast('กำลังบันทึกการคืน...');
+    const res = await jsonp('return', { sap: state.sap, rowId, status:'RETURNED' });
+    if(!res || !res.ok){ toast(res?.error||'คืนไม่สำเร็จ', true); return; }
+    toast('บันทึกการคืนเรียบร้อยแล้ว');
+    // refresh current modals & dashboard
+    try{ await loadHistoryYear(); }catch(_){}
+    try{ await refreshDashboard(); await loadUsage(); }catch(_){}
+  }catch(e){
+    toast('คืนไม่สำเร็จ: '+(e.message||String(e)), true);
+  }
+}
+
+async function cancelLoan(rowId){
+  rowId=Number(rowId||0);
+  if(!rowId) return;
+  const ok = confirm('ยืนยันการยกเลิกรายการนี้?');
+  if(!ok) return;
+  try{
+    toast('กำลังบันทึกการยกเลิก...');
+    const res=await jsonp('cancelRow',{sap:state.sap,rowId});
+    if(!res||!res.ok){ toast(res?.error||'ยกเลิกไม่สำเร็จ', true); return; }
+    toast('ยกเลิกรายการเรียบร้อยแล้ว');
+    try{ await loadHistoryYear(); }catch(_){}
+    try{ await refreshDashboard(); await loadUsage(); }catch(_){}
+  }catch(e){
+    toast('ยกเลิกไม่สำเร็จ: '+(e.message||String(e)), true);
+  }
+}
+
+
+
+async function refreshBorrowLists(){
+  // reload modal history list
+try{ await loadHistoryYear(); }catch(_){}
+}
+
+/* ===== Borrow availability live-check ===== */
+let _borrowCheckTimer = null;
+let _borrowHasConflict = false;
+
+function _setBorrowMsg_(msg, type){
+  const el = document.getElementById('borrowMsg');
+  if(!el) return;
+  if(!msg){
+    el.style.display = 'none';
+    el.textContent = '';
+    el.style.color = '';
+    el.style.fontWeight = '';
+    el.style.fontSize = '';
+    return;
+  }
+  el.style.display = 'block';
+  el.textContent = msg;
+  if(type === 'error'){
+    el.style.color = '#b91c1c';        /* red-700 */
+    el.style.fontWeight = '800';
+    el.style.fontSize = '18px';
+  }else if(type === 'success'){
+    el.style.color = '#15803d';        /* green-700 */
+    el.style.fontWeight = '700';
+    el.style.fontSize = '14px';
+  }else{
+    el.style.color = '#334155';
+    el.style.fontWeight = '600';
+    el.style.fontSize = '13px';
+  }
+}
+
+function _getBorrowForm_(){
+  const deviceCode = (document.getElementById('bDevice')||{}).value || '';
+  const borrowDate = (document.getElementById('bDate')||{}).value || ''; // yyyy-MM-dd
+  const startTime  = (document.getElementById('bStart')||{}).value || '';
+  const endTime    = (document.getElementById('bEnd')||{}).value || '';
+  return { deviceCode: String(deviceCode).trim(), borrowDate: String(borrowDate).trim(), startTime: String(startTime).trim(), endTime: String(endTime).trim() };
+}
+
+async function _runBorrowAvailabilityCheck_(payload){
+  // 1) Prefer server-side check (Apps Script) if available
+  const v = await checkAvailability_(payload);
+
+  if (v && v.ok === true){
+    if (v.conflict){
+      const msg = "มีผู้ใช้เครื่องในช่วงเวลาดังกล่าว โปรดตรวจสอบอีกครั้ง";
+      toast(msg,'error');
+      alert(msg);
+      return {ok:false, reason:'conflict', detail:v};
+    }
+    return {ok:true, source:'server'};
+  }
+
+  // 2) Fallback: local overlap check using listUsage (works even if server action missing)
+  try{
+    const list = await jsonp('listUsage',{ date: payload.borrowDate });
+    const rows = (list && list.rows) ? list.rows : [];
+    const s = timeToMin_(payload.startTime);
+    const e = timeToMin_(payload.endTime);
+
+    const device = String(payload.deviceCode||'').trim();
+    const conflict = rows.some(r=>{
+      const stRaw = String(r.status||'').toUpperCase();
+      const st = normalizeStatus_(stRaw);
+      if (!device || String(r.device||'').trim() !== device) return false;
+      // ignore finished/cancelled
+      if (st === 'CANCELLED' || st === 'RETURNED') return false;
+
+      const rs = timeToMin_(r.start);
+      const re = timeToMin_(r.end);
+      // Overlap: [s,e) intersects [rs,re)
+      return (s < re) && (e > rs);
+    });
+
+    if (conflict){
+      const msg = "มีผู้ใช้เครื่องในช่วงเวลาดังกล่าว โปรดตรวจสอบอีกครั้ง";
+      toast(msg,'error');
+      alert(msg);
+      return {ok:false, reason:'conflict-local'};
+    }
+    return {ok:true, source:'local'};
+  }catch(err){
+    // If even fallback fails, do not hard-block (but tell user)
+    console.warn('availability fallback failed', err);
+    return {ok:true, source:'no-check'};
+  }
+}
+
+function wireBorrowLiveCheck_(){
+  const ids = ['bDevice','bDate','bStart','bEnd'];
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('change', ()=>{
+      if(_borrowCheckTimer) clearTimeout(_borrowCheckTimer);
+      _borrowCheckTimer = setTimeout(()=>{ _runBorrowAvailabilityCheck_({silent:false}); }, 250);
+    });
+    el.addEventListener('input', ()=>{
+      if(_borrowCheckTimer) clearTimeout(_borrowCheckTimer);
+      _borrowCheckTimer = setTimeout(()=>{ _runBorrowAvailabilityCheck_({silent:true}); }, 250);
+    });
+  });
+}
+async function submitBorrow(){
+  const btn=document.getElementById('btnBorrowSubmit');
+  const device=(document.getElementById('bDevice')?.value||'').trim();
+  const date=(document.getElementById('bDate')?.value||'').trim();
+  const start=(document.getElementById('bStart')?.value||'').trim();
+  const end=(document.getElementById('bEnd')?.value||'').trim();
+  const purpose=(document.getElementById('bPurpose')?.value||'').trim();
+  const location=getBorrowLocation_();
+  const note=(document.getElementById('bNote')?.value||'').trim();
+
+  // validate required
+  if(!device || !date || !start || !end || !purpose || !location){
+    toast('กรอกข้อมูลไม่ครบ', true);
+    _setBorrowMsg_('กรอกข้อมูลไม่ครบ', 'error');
+    return;
+  }
+  if(timeToMin(end) <= timeToMin(start)){
+    toast('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม', true);
+    _setBorrowMsg_('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม', 'error');
+    return;
+  }
+
+  // lock UI
+  try{
+    if(btn){ btn.disabled=true; }
+    _setBorrowMsg_('กำลังบันทึกการจอง...', 'hint');
+    toast('กำลังบันทึกการจอง');
+
+    // re-check conflict before save (server-side)
+    const av = await checkAvailability_({
+      deviceCode: device,
+      borrowDate: date,
+      startTime: start,
+      endTime: end,
+      // ถ้ามีโหมดแก้ไข ให้ส่ง excludeRowId เพื่อไม่ชนกับแถวเดิม
+      excludeRowId: (_editRowId||'')
+    });
+
+    if(av && av.ok && av.conflict){
+      const m = (av.message || 'มีผู้ใช้จองเครื่องในช่วงเวลาดังกล่าว โปรดตรวจสอบอีกครั้ง');
+      toast(m, true);
+      try{ alert(m); }catch(_){ }
+      _setBorrowMsg_(m, 'error');
+      return;
+    }
+
+    // save
+    const payload = { sap: state.sap, device, date, start, end, purpose, location, note };
+    const res = await jsonp('borrow', payload);
+
+    if(!res || !res.ok){
+      toast(res?.error||'บันทึกไม่สำเร็จ', true);
+      _setBorrowMsg_(res?.error||'บันทึกไม่สำเร็จ', 'error');
+      return;
+    }
+
+    toast('บันทึกการจองเรียบร้อยแล้ว');
+    _setBorrowMsg_('บันทึกการจองเรียบร้อยแล้ว ดูที่ประวัติการยืมอีกครั้ง', 'success');
+
+    // reset edit state + refresh views
+    _editRowId=null;
+    try{ await refreshDashboard(); await loadUsage(); }catch(_){}
+    // โหลดประวัติใหม่ในพื้นหลัง (ถ้าเปิดอยู่)
+    try{
+      const hw=document.getElementById('historyWrap');
+      if(hw) await loadHistoryYear();
+    }catch(_){}
+  }catch(e){
+    toast('บันทึกไม่สำเร็จ: '+(e.message||String(e)), true);
+    _setBorrowMsg_('บันทึกไม่สำเร็จ', 'error');
+  }finally{
+    if(btn){ btn.disabled=false; }
+  }
+}
+
+async function refreshBorrowList(){
+  // รายงานด้านล่างใน pop up ยืมถูกเอาออกแล้ว (ตาม requirement)
+  return;
+}
+
+function returnFormHtml(){
+  const d=todayISO();
+  const now=new Date();
+  const t=pad2(now.getHours())+':'+pad2(now.getMinutes());
+  return `
+    <div class="row" style="margin-bottom:12px">
+      <div style="flex:1 1 180px"><label>รหัสเครื่อง</label><select id="rDevice" class="inputSel"><option value="">กำลังโหลด...</option></select></div>
+      <div style="flex:0 0 220px">
+        <label>วันที่คืน</label>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="date" id="rDate" class="dateIconOnly" value="${d}" lang="en-GB">
+          <div class="chip" id="rDateLabel">-</div>
+        </div>
+      </div>
+      <div style="flex:0 0 150px"><label>เวลาที่คืน</label><input id="rTime" readonly style="background:#f3f6ff" value="${t}"></div>
+      <div style="flex:1 1 100%"><label>หมายเหตุ</label><input id="rNote" placeholder="หมายเหตุการคืน (ถ้ามี)"></div>
+    </div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" onclick="submitReturn('RETURNED')">คืนปกติ</button>
+      <button class="btn danger" onclick="submitReturn('DAMAGED')">ชำรุด</button>
+      <button class="btn danger" onclick="submitReturn('LOST')">สูญหาย</button>
+    </div>
+    <div id="returnMsg" class="hint" style="margin-top:10px"></div>
+  `;
+}
+
+async function submitReturn(status){
+  const msg=document.getElementById('returnMsg');
+  msg.style.color='var(--muted)'; msg.textContent='กำลังบันทึก...';
+  const payload={
+    user:state.user,sap:state.sap,
+    device:(document.getElementById('rDevice').value||'').trim(),
+    returnDate:document.getElementById('rDate').value,
+    returnTime:document.getElementById('rTime').value,
+    returnNote:(document.getElementById('rNote').value||'').trim(),
+    status
+  };
+  if(!payload.device){ msg.style.color='var(--bad)'; msg.textContent='กรุณากรอกรหัสเครื่อง'; return; }
+  try{
+    const res=await jsonp('return',payload);
+    if(!res||!res.ok){ msg.style.color='var(--bad)'; msg.textContent=res.error||'บันทึกไม่สำเร็จ'; return; }
+    msg.style.color='var(--ok)'; msg.textContent='บันทึกสำเร็จ';
+    await refreshDashboard();
+  }catch(e){ msg.style.color='var(--bad)'; msg.textContent=e.message||String(e); }
+}
+
+async function loadHistoryYear(){
+  const wrap=document.getElementById('historyWrap');
+  if(!wrap) return;
+  wrap.innerHTML='<div class="muted">กำลังโหลด.</div>';
+  try{
+    const yearBE=document.getElementById('hYearBE')?.value || '';
+    const monthSel=Number(document.getElementById('hMonth')?.value || 0); // 0=all
+
+    const res=await jsonp('history',{sap:state.sap, yearBE});
+    if(!res||!res.ok){ wrap.innerHTML=`<div class="muted">${escapeHtml(res?.error||'โหลดไม่สำเร็จ')}</div>`; return; }
+
+    let rows=(res.rows||[]);
+    if(monthSel>=1 && monthSel<=12){
+      rows = rows.filter(r=>{
+        const d=new Date(r.date||r.BorrowDate||r.CreatedAt||'');
+        return !isNaN(d.getTime()) && (d.getMonth()+1)===monthSel;
+      });
+    }
+
+    wrap.innerHTML=historyTableHtml(rows,'history');
+  }catch(e){
+    wrap.innerHTML=`<div class="muted">เชื่อมต่อไม่ได้: ${escapeHtml(e.message||String(e))}</div>`;
+  }
+}
+
+function historyTableHtml(rows, mode){
+  mode = mode || 'history';
+  // ✅ โหมด borrow: ซ่อนรายการเก่าเกิน 7 วัน (เพื่อให้ list ด้านล่างไม่ยาวเกินไป)
+// โหมด history: แสดงทั้งหมดตามตัวกรองเดือน/ปี
+  if(mode==='borrow'){
+    const cutoff=new Date(); cutoff.setDate(cutoff.getDate()-7);
+    rows=(rows||[]).filter(r=>{ 
+      try{ 
+        const d=new Date(r.date||r.BorrowDate||r.CreatedAt||''); 
+        return !(d && !isNaN(d.getTime()) && d < cutoff); 
+      }catch(_){ return true; } 
+    });
+  }
+
+  if(!rows.length) return '<div class="muted">ยังไม่มีประวัติ</div>';
+
+  // group by month (AD)
+  const monthsTH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const pad2=(n)=>String(n).padStart(2,'0');
+  const fmtAD=(iso)=>{
+    const d=new Date(iso);
+    if(isNaN(d.getTime())) return (iso||'-');
+    return `${pad2(d.getDate())}-${pad2(d.getMonth()+1)}-${d.getFullYear()}`;
+  };
+  const formatReturnDT_=(r)=>{
+    const rd = (r && (r.returnDate||r.return_date||r.retDate||r.ReturnDate)) || '';
+    const rt = (r && (r.returnTime||r.return_time||r.retTime||r.ReturnTime)) || '';
+    if(!rd && !rt) return '-';
+    const dPart = rd ? fmtAD(rd) : '-';
+    const tPart = rt ? String(rt) : '';
+    return (tPart? (dPart+' '+tPart) : dPart);
+  };
+  const monthKey=(iso)=>{ const d=new Date(iso); if(isNaN(d.getTime())) return '0000-00'; return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; };
+  const monthLabel=(iso)=>{ const d=new Date(iso); if(isNaN(d.getTime())) return ''; return `${monthsTH[d.getMonth()]} ${d.getFullYear()}`; };
+
+  const map=new Map();
+  rows.forEach(r=>{
+    const key=monthKey(r.date);
+    if(!map.has(key)) map.set(key,{key,label:monthLabel(r.date),items:[]});
+    map.get(key).items.push(r);
+  });
+
+  const groups=[...map.values()].sort((a,b)=>String(b.key).localeCompare(String(a.key)));
+
+  const headLast1 = 'สถานที่';
+  const headLast2 = 'จัดการ';
+
+  return groups.map(g=>`
+    <div class="monthBlock">
+      <div class="monthTitle">${escapeHtml(g.label||'')}</div>
+      <div style="overflow:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>รหัสเครื่อง</th>
+            <th>วันที่</th>
+            <th>เวลาเริ่ม-สิ้นสุด</th>
+            <th>คืน/ยกเลิก</th>
+            <th>วัตถุประสงค์</th>
+            <th>สถานะ</th>
+            <th>${headLast1}</th><th>${headLast2}</th>
+          </tr></thead>
+          <tbody>
+            ${g.items.map(r=>{
+              const st = normalizeStatus_(String(r.status||'').toUpperCase());
+              const canEdit = (mode==='borrow' && st==='BOOKED');
+              const lastTd1 = escapeHtml(r.location||'-');
+
+              // actions (history/admin)
+              // ✅ เงื่อนไขปุ่มตามหน้าที่:
+              // - หน้า "ประวัติยืม" : (จอง/ใช้งานอยู่)=ยกเลิก, (รอคืน)=คืน
+              // - โหมดอื่นคงเดิมเพื่อไม่กระทบระบบงานอื่น
+              let canCancel=false, canReturn=false;
+              if(mode==='history'){
+                canCancel = (st==='BOOKED' || st==='IN_USE');
+                canReturn = (st==='WAIT_RETURN');
+              }else{
+                canCancel = (st==='BOOKED');
+                canReturn = (st==='BOOKED' || st==='IN_USE' || st==='WAIT_RETURN');
+              }
+
+              const lastTd2 = (canCancel || canReturn)
+                ? `<div class="actions">
+                     ${canCancel ? `<button class="mini danger" onclick="cancelLoan(${Number(r.rowId)})">ยกเลิก</button>` : ''}
+                     ${canReturn ? `<button class="mini primary" onclick="returnLoan(${Number(r.rowId)})">คืน</button>` : ''}
+                   </div>`
+                : '<span class="muted">-</span>';
+
+              return `<tr>
+                <td><b>${escapeHtml(r.device||'-')}</b></td>
+                <td>${escapeHtml(fmtAD(r.date||''))}</td>
+                <td>${escapeHtml((r.start||'-')+' - '+(r.end||'-'))}</td>
+                <td>${escapeHtml(formatReturnDT_(r))}</td>
+                <td>${escapeHtml(r.purpose||'-')}</td>
+                <td>${statusChip(st,false)}</td>
+                <td>${lastTd1}</td><td>${lastTd2}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openAdmin(){
+  if(!state.isAdmin){ alert('ต้องเป็น Admin เท่านั้น'); return; }
+  await loadAdminPanel_();
+}
+
+// (ยกเลิก Admin Gate — ใช้ Role=admin จากชีต Users)
+async function showAdminGate_(){
+  // Deprecated
+  await loadAdminPanel_();
+}
+
+async function doAdminGateLogin_(){
+  const err=document.getElementById('admGateErr');
+  if(err) err.textContent='';
+  const sap=(document.getElementById('admSap')?.value||'').trim();
+  const pickSap=(document.getElementById('admPick')?.value||'').trim();
+
+  if(!sap){ if(err) err.textContent='กรุณากรอก SAP ของ Admin'; return; }
+
+  try{
+    const res=await jsonp('login',{sap});
+    if(!res || !res.ok){ if(err) err.textContent=(res&&res.error)?res.error:'Login ไม่สำเร็จ'; return; }
+    if(!res.isAdmin){ if(err) err.textContent='บัญชีนี้ไม่ใช่ Admin'; return; }
+
+    // ถ้าเลือกจาก dropdown ให้ sap ต้องตรงกัน
+    if(pickSap && pickSap!==sap){ if(err) err.textContent='SAP ไม่ตรงกับรายชื่อที่เลือก'; return; }
+
+    // ผ่าน
+    // admin gate removed (Role-based)
+    saveSession({user:state.user,sap:state.sap,isAdmin:state.isAdmin});
+    await loadAdminPanel_();
+  }catch(e){
+    if(err) err.textContent=e.message||String(e);
+  }
+}
+
+async function loadAdminPanel_(){
+  showModal('Admin — จัดการรายการทั้งหมด','<div class="muted">กำลังโหลด...</div>');
+  const body=document.getElementById('modalBody');
+
+  const now=new Date();
+  const beNow=now.getFullYear()+543;
+  const mNow=now.getMonth()+1;
+  const monthsTH=['ทั้งหมด','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const yOpts=[beNow,beNow-1,beNow-2].map(y=>`<option value="${y}">${y}</option>`).join('');
+  const mOpts=Array.from({length:13},(_,i)=>`<option value="${i}">${monthsTH[i]}</option>`).join('');
+
+  try{
+    const res=await jsonp('adminList',{sap:state.sap});
+    if(!res||!res.ok){ body.innerHTML=`<div class="muted">${escapeHtml(res.error||'โหลดไม่สำเร็จ')}</div>`; return; }
+
+    state.adminRows = res.rows || [];
+
+    body.innerHTML = `
+      <div class="row" style="gap:10px;align-items:end;margin-bottom:10px">
+        <div style="flex:0 0 180px">
+          <label>ปี (พ.ศ.)</label>
+          <select id="aYearBE" class="inputSel">${yOpts}</select>
+        </div>
+        <div style="flex:0 0 180px">
+          <label>เดือน</label>
+          <select id="aMonth" class="inputSel">${mOpts}</select>
+        </div>
+        <div><button class="btn" onclick="renderAdminFiltered_()">แสดง</button></div>
+      </div>
+      <div id="adminTableWrap"></div>
+    `;
+
+    document.getElementById('aYearBE').value=String(beNow);
+    document.getElementById('aMonth').value=String(mNow);
+    renderAdminFiltered_();
+
+  }catch(e){
+    body.innerHTML=`<div class="muted">เชื่อมต่อไม่ได้: ${escapeHtml(e.message||String(e))}</div>`;
+  }
+}
+
+
+
+function renderStatusBadge_(st){
+  // ✅ ให้สถานะหน้า Admin เหมือน Dashboard/ประวัติยืม (ใช้ตัวเดียวกันทั้งหมด)
+  return statusChip(normalizeStatus_(st), false);
+}
+function adminTableHtml(rows){
+  if(!rows.length) return '<div class="muted">ไม่มีข้อมูล</div>';
+  return `
+  <div class="muted" style="margin-bottom:8px">เรียงตามวันและเวลา (ล่าสุดขึ้นก่อน)</div>
+  <div style="overflow:auto">
+    <table class="tbl">
+      <thead><tr><th>ชื่อ-สกุลผู้ยืม</th><th>รหัสเครื่อง</th><th>วันที่ยืม</th><th>เวลาที่ใช้งาน</th><th>วันที่คืน/ยกเลิก</th><th>วัตถุประสงค์</th><th>หมายเหตุ</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td>${escapeHtml(r.borrower||'-')}</td>
+          <td><b>${escapeHtml(r.device||'-')}</b></td>
+          <td>${escapeHtml(fmtDMY(r.borrowDT||''))}</td>
+          <td>${escapeHtml((r.start||'-')+'-'+(r.end||'-'))}</td>
+          <td>${escapeHtml(fmtDMYWithTime(r.returnDT||''))}</td>
+          <td>${escapeHtml(r.purpose||'-')}</td>
+          <td>${escapeHtml(r.note||'-')}</td>
+          <td>${renderStatusBadge_(r.status||'')}</td>
+          <td>${
+            (()=>{ 
+              const st=String(r.status||'').trim().toUpperCase();
+              const returned = (r.returnDT && String(r.returnDT).trim()!=='');
+              const locked = returned || st==='CANCELLED' || st==='RETURNED';
+              if(locked) return '<span class="muted">-</span>';
+              return '<div class="actions"><button class="mini primary" onclick="adminEdit('+Number(r.rowId)+')">แก้ไข</button><button class="mini danger" onclick="adminDelete('+Number(r.rowId)+')">ลบ</button></div>';
+            })()
+          }</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+
+function renderAdminFiltered_(){
+  const wrap=document.getElementById('adminTableWrap');
+  if(!wrap) return;
+  const rows=state.adminRows||[];
+  const yBE=Number(document.getElementById('aYearBE')?.value||0);
+  const mSel=Number(document.getElementById('aMonth')?.value||0); //0=all
+
+  const filtered = rows.filter(r=>{
+    const d=new Date(r.borrowDT||r.dateISO||r.date||'');
+    if(isNaN(d.getTime())) return false;
+    const be=d.getFullYear()+543;
+    if(yBE && be!==yBE) return false;
+    if(mSel>=1 && mSel<=12 && (d.getMonth()+1)!==mSel) return false;
+    return true;
+  });
+
+  wrap.innerHTML = adminTableHtml(filtered);
+}
+
+async function adminDelete(rowId){
+  if(!confirm('ยืนยันลบรายการนี้?')) return;
+  try{ const res=await jsonp('deleteRow',{sap:state.sap,rowId}); if(!res||!res.ok){ alert(res.error||'ลบไม่สำเร็จ'); return; }
+    await openAdmin(); await refreshDashboard();
+  }catch(e){ alert(e.message||String(e)); }
+}
+
+async function adminEdit(rowId){
+  const body=document.getElementById('modalBody');
+  body.innerHTML='<div class="muted">กำลังโหลดข้อมูล...</div>';
+  try{
+    const res=await jsonp('getRow',{sap:state.sap,rowId});
+    if(!res||!res.ok){ body.innerHTML='<div class="muted">โหลดไม่สำเร็จ</div>'; return; }
+    const r=res.row;
+    body.innerHTML=`
+      <div class="row" style="margin-bottom:12px">
+        <div style="flex:1 1 220px"><label>ชื่อ-สกุลผู้ยืม</label><input id="eBorrower" value="${escapeAttr(r.borrower||'')}"></div>
+        <div style="flex:0 0 160px"><label>รหัสเครื่อง</label><input id="eDevice" value="${escapeAttr(r.device||'')}"></div>
+        <div style="flex:0 0 170px"><label>วันที่ยืม</label><input type="date" id="eDate" value="${escapeAttr(r.dateISO||'')}"></div>
+        <div style="flex:0 0 150px"><label>เวลาเริ่ม</label><input type="time" id="eStart" value="${escapeAttr(r.start||'')}" step="1800"></div>
+        <div style="flex:0 0 150px"><label>เวลาสิ้นสุด</label><input type="time" id="eEnd" value="${escapeAttr(r.end||'')}" step="1800"></div>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <div style="flex:1 1 260px"><label>วัตถุประสงค์</label><input id="ePurpose" value="${escapeAttr(r.purpose||'')}"></div>
+        <div style="flex:1 1 220px"><label>สถานที่</label><input id="eLocation" value="${escapeAttr(r.location||'')}"></div>
+      </div>
+      <div class="row" style="margin-bottom:12px"><div style="flex:1 1 100%"><label>หมายเหตุ</label><textarea id="eNote">${escapeHtml(r.note||'')}</textarea></div></div>
+      <div class="row" style="justify-content:flex-end"><button class="btn" onclick="adminSave(${Number(rowId)})">บันทึก</button></div>
+    `;
+  }catch(e){ body.innerHTML=`<div class="muted">${escapeHtml(e.message||String(e))}</div>`; }
+}
+
+async function adminSave(rowId){
+  const payload={
+    sap:state.sap,
+    rowId,
+    borrower:(document.getElementById('eBorrower').value||'').trim(),
+    device:(document.getElementById('eDevice').value||'').trim(),
+    dateISO:document.getElementById('eDate').value,
+    start:document.getElementById('eStart').value,
+    end:document.getElementById('eEnd').value,
+    purpose:(document.getElementById('ePurpose').value||'').trim(),
+    location:(document.getElementById('eLocation').value||'').trim(),
+    note:(document.getElementById('eNote').value||'').trim(),
+  };
+  try{ const res=await jsonp('updateRow',payload); if(!res||!res.ok){ alert(res.error||'บันทึกไม่สำเร็จ'); return; }
+    await openAdmin(); await refreshDashboard();
+  }catch(e){ alert(e.message||String(e)); }
+}
+
+(function init(){
+  const sess=loadSession();
+  if(sess&&sess.user&&sess.sap){ state.user=sess.user; state.sap=sess.sap; state.isAdmin=!!sess.isAdmin; }
+  applyLoggedInUI(); setDefaultFilters();
+  var _d=document.getElementById('fDate'); if(_d){ _d.addEventListener('change', updateDateLabel_); _d.addEventListener('input', updateDateLabel_); }
+  initTimeSelect('fStart','06:00');
+  initTimeSelect('fEnd','18:00');
+  loadDevices().catch(()=>{});
+  if(state.sap) refreshDashboard();
+})();
+</script>
+
+<script>
+  // Prevent "stuck" button focus color after click/tap (keeps UI snappy for Gen Z)
+  (function(){
+    function blurButton(ev){
+      var btn = ev.target && ev.target.closest ? ev.target.closest('button') : null;
+      if(btn) setTimeout(function(){ try{ btn.blur(); }catch(e){} }, 0);
+    }
+    document.addEventListener('click', blurButton, true);
+    document.addEventListener('touchend', blurButton, {capture:true, passive:true});
+    document.addEventListener('pointerup', blurButton, true);
+  })();
+</script>
 
 </body>
 </html>
