@@ -1,0 +1,956 @@
+/****************************
+ * Notebook Borrow/Return — Apps Script API (for GitHub Pages)
+ * - JSONP (bypass CORS)
+ * - Sheets: Users, Devices, Loans
+ ****************************/
+
+const SPREADSHEET_ID = '1Cyi-bv2w-MubEa9xbrGzTucspuiJ5jkXQVqkNu4xbkY';
+const TZ = 'Asia/Bangkok';
+const VERSION='2026-03-20-v20';
+
+const SHEET = {
+  USERS: 'Users',
+  DEVICES: 'Devices',
+  LOANS: 'Loans',
+  LOCATION: 'Location',
+};
+
+const LOAN_HEADERS = [
+  'RowId','CreatedAt',
+  'BorrowerName','SAP',
+  'DeviceCode',
+  'BorrowDate','StartTime','EndTime',
+  'Purpose','Location','Note',
+  'ReturnDate','ReturnTime','ReturnNote',
+  'Status' // BOOKED, IN_USE, WAIT_RETURN, RETURNED, CANCELLED, DAMAGED, LOST
+];
+
+const USER_HEADERS = ['SAP','User','Role']; // Role: admin/user
+const DEVICE_HEADERS = ['DeviceCode','Active'];
+
+function ss_(){ return SpreadsheetApp.openById(SPREADSHEET_ID); }
+
+function getOrCreate_(name, headers){
+  const ss = ss_();
+  let sh = ss.getSheetByName(name);
+  if(!sh){
+    sh = ss.insertSheet(name);
+    sh.getRange(1,1,1,headers.length).setValues([headers]);
+    sh.setFrozenRows(1);
+  }else{
+    const first = sh.getRange(1,1,1,Math.max(sh.getLastColumn(),headers.length)).getValues()[0] || [];
+    if(first.filter(String).length===0){
+      sh.getRange(1,1,1,headers.length).setValues([headers]);
+      sh.setFrozenRows(1);
+    }
+  }
+  return sh;
+}
+
+function ensureSheets_(){
+  getOrCreate_(SHEET.USERS, USER_HEADERS);
+  getOrCreate_(SHEET.DEVICES, DEVICE_HEADERS);
+  getOrCreate_(SHEET.LOANS, LOAN_HEADERS);
+  // Location sheet: column A = Location
+  const sh=ss_().getSheetByName(SHEET.LOCATION) || ss_().insertSheet(SHEET.LOCATION);
+  if(sh.getLastRow()===0){ sh.getRange(1,1).setValue('Location'); }
+}
+
+function normalize_(s){ return String(s||'').trim(); }
+
+function dateISOFromCell_(v){
+  // Accept Date, number (serial), or string; return yyyy-MM-dd or ''
+  if (v == null || v === '') return '';
+  if (v instanceof Date){
+    return Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+  }
+  if (typeof v === 'number' && isFinite(v)){
+    // Google Sheets date serial (days since 1899-12-30)
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return Utilities.formatDate(d, TZ, 'yyyy-MM-dd');
+  }
+  const s = String(v).trim();
+  // if already yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // try parse
+  const d2 = new Date(s);
+  if (!isNaN(d2.getTime())) return Utilities.formatDate(d2, TZ, 'yyyy-MM-dd');
+  return s;
+}
+
+function fmtDate_(v){
+  if(v==null||v==='') return '';
+  if(Object.prototype.toString.call(v)==='[object Date]' && !isNaN(v.getTime())){
+    return Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+  }
+  const s=String(v).trim();
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return m[0];
+  const d=new Date(s);
+  if(!isNaN(d.getTime())) return Utilities.formatDate(d, TZ, 'yyyy-MM-dd');
+  return s;
+}
+
+function fmtTime_(v){
+  if(v==null||v==='') return '';
+  if(Object.prototype.toString.call(v)==='[object Date]' && !isNaN(v.getTime())){
+    return Utilities.formatDate(v, TZ, 'HH:mm');
+  }
+  const s=String(v).trim();
+  const m=s.match(/^(\d{1,2}):(\d{2})/);
+  if(m) return (String(m[1]).padStart(2,'0')+':'+m[2]);
+  const d=new Date(s);
+  if(!isNaN(d.getTime())) return Utilities.formatDate(d, TZ, 'HH:mm');
+  return s;
+}
+function effectiveStatus_(borrowDateISO, start, end, returnDateISO, status){
+  const st = String(status||'').trim().toUpperCase() || 'BOOKED';
+
+  // ถ้ามีการคืนแล้ว ให้ใช้สถานะเดิม (RETURNED ฯลฯ)
+  if(returnDateISO) return st;
+
+  // สถานะที่ปิดงานแล้ว ไม่ต้องคำนวณเพิ่ม
+  if(st==='CANCELLED' || st==='RETURNED' || st==='DAMAGED' || st==='LOST') return st;
+
+  const todayISO = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  const bISO = String(borrowDateISO||'').trim();
+
+ // ถ้าเป็นวันก่อนหน้าและยังไม่คืน -> รอคืน
+if (bISO < todayISO) return 'WAIT_RETURN';
+
+// ถ้าเป็นวันอนาคต -> คงสถานะเดิม
+if (bISO > todayISO) return st;
+
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  const sMin = timeToMin_(start);
+  const eMin = timeToMin_(end);
+  if(!isFinite(sMin) || !isFinite(eMin)) return st;
+
+  // อยู่ในช่วงเวลาใช้งาน -> ใช้งานอยู่
+  if(nowMin >= sMin && nowMin < eMin) return 'IN_USE';
+
+  // เลยเวลาสิ้นสุดแล้วและยังไม่คืน -> รอคืน
+  if(nowMin >= eMin) return 'WAIT_RETURN';
+
+  // ยังไม่ถึงเวลาเริ่ม -> จอง
+  return st;
+}
+
+
+function nowISO_(){ return Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd'T'HH:mm:ss"); }
+function safeNum_(x, d){ x=Number(x); return isNaN(x)?d:x; }
+function timeToMin_(t){
+  // รองรับทั้ง string, Date (time-only), และตัวเลขแบบ fraction ของวันจาก Google Sheets
+  if (t instanceof Date){
+    return t.getHours()*60 + t.getMinutes();
+  }
+  if (typeof t === 'number' && isFinite(t)){
+    // time-only ในชีตอาจเป็น 0.0 - 0.999 (fraction of day)
+    const mins = Math.round(t * 24 * 60);
+    return mins;
+  }
+  t = String(t||'').trim();
+  // ชีตบางครั้งเก็บเวลาเป็นข้อความมีเครื่องหมาย ' นำหน้าเพื่อกัน auto-format เช่น '09:00
+  t = t.replace(/^[\u2019\u2018'`]+/, ''); // ' ’ `
+  const m = t.match(/^(\d{1,2}):(\d{2})/);
+  if(!m) return NaN;
+  return Number(m[1])*60 + Number(m[2]);
+}
+function overlap_(aStart,aEnd,bStart,bEnd){ return !(aEnd < bStart || bEnd < aStart); }
+
+function readSheet_(name){
+  const sh = ss_().getSheetByName(name);
+  if(!sh) throw new Error('Missing sheet: '+name);
+  const v = sh.getDataRange().getValues();
+  const head = v[0] || [];
+  const rows = v.slice(1);
+  const idx = {};
+  head.forEach((h,i)=> idx[String(h).trim()] = i);
+  return { sh, head, idx, rows };
+}
+
+function findUser_(sap, user){
+  const { rows, idx } = readSheet_(SHEET.USERS);
+  const s = normalize_(sap);
+  const u = normalize_(user);
+  for(const r of rows){
+    const rs = normalize_(r[idx.SAP]);
+    const ru = normalize_(r[idx.User]);
+    if(rs===s && ru.toLowerCase()===u.toLowerCase()){
+      const role = normalize_(r[idx.Role]) || 'user';
+      return { sap: rs, user: ru, role };
+    }
+  }
+  return null;
+}
+
+function findUserBySap_(sap){
+  const { rows, idx } = readSheet_(SHEET.USERS);
+  const s = normalize_(sap);
+  for(const r of rows){
+    if(normalize_(r[idx.SAP])===s){
+      return { sap:s, user: normalize_(r[idx.User]), role: normalize_(r[idx.Role])||'user' };
+    }
+  }
+  return null;
+}
+
+function deviceIsActive_(device){
+  const { rows, idx } = readSheet_(SHEET.DEVICES);
+  const d = normalize_(device).toUpperCase();
+  for(const r of rows){
+    const code = normalize_(r[idx.DeviceCode]).toUpperCase();
+    if(code===d){
+      const active = String(r[idx.Active]).toLowerCase();
+      return (active==='' || active==='true' || active==='1' || active==='yes');
+    }
+  }
+  return true; // ถ้าไม่มีใน Devices ให้ถือว่าใช้งานได้
+}
+
+function doGet(e){
+  const cb = (e && e.parameter && e.parameter.callback) ? e.parameter.callback : null;
+  const action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action).toLowerCase() : '';
+  let out;
+  try{
+    ensureSheets_();
+    switch(action){
+      case 'ping': out={ok:true,ts:nowISO_(),version:VERSION}; break;
+      case 'login': out=apiLogin_(e); break;
+      case 'listadmins': out=apiListAdmins_(); break;
+      case 'dashboard': out=apiDashboard_(); break;
+      case 'listusage': out=apiListUsage_(e); break;
+      case 'borrow': out=apiBorrow_(e); break;
+      case 'checkavailability': out=apiCheckAvailability_(e); break;
+      case 'return': out=apiReturn_(e); break;
+      case 'history': out=apiHistory_(e); break;
+      case 'adminlist': out=apiAdminList_(e); break;
+      case 'deleterow': out=apiDeleteRow_(e); break;
+      case 'getrow': out=apiGetRow_(e); break;
+      case 'updaterow': out=apiUpdateRow_(e); break;
+      case 'cancelrow': out=apiCancelRow_(e); break;
+      case 'listdevices': out=apiListDevices_(e); break;
+      case 'listlocations': out=apiListLocations_(e); break;
+      case 'getloanyears': out=apiGetLoanYears_(); break;
+      default: out={ok:false,error:'Unknown action',version:VERSION};
+    }
+  }catch(err){
+    out={ok:false,error:String(err && err.message ? err.message : err)};
+  }
+
+  const payload = cb ? `${cb}(${JSON.stringify(out)});` : JSON.stringify(out);
+  return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function apiLogin_(e){
+  const p=e.parameter||{};
+  const sap=normalize_(p.sap);
+  if(!sap) return {ok:false,error:'Missing SAP'};
+  const u=findUserBySap_(sap);
+  if(!u) return {ok:false,error:'ไม่พบ SAP ในชีต Users'};
+  return {ok:true,user:u.user,sap:u.sap,isAdmin:(String(u.role).toLowerCase()==='admin')};
+}
+
+function apiListAdmins_(){
+  const { rows, idx } = readSheet_(SHEET.USERS);
+  const out = [];
+  for(const r of rows){
+    const sap = normalize_(r[idx.SAP]);
+    const user = normalize_(r[idx.User]);
+    const role = normalize_(r[idx.Role]).toLowerCase();
+    if(role==='admin' && sap){
+      out.push({user:user||sap,sap:sap});
+    }
+  }
+  out.sort((a,b)=>String(a.user).localeCompare(String(b.user)));
+  return {ok:true,admins:out};
+}
+
+function apiDashboard_(){
+  const { rows, idx } = readSheet_(SHEET.LOANS);
+  const dev = readSheet_(SHEET.DEVICES);
+
+  // 1) Total devices = Devices sheet (Active = true/1/yes/blank)
+  const activeDevices = dev.rows
+    .filter(r=>{
+      const active = String(r[dev.idx.Active]).toLowerCase();
+      return (active===''||active==='true'||active==='1'||active==='yes');
+    })
+    .map(r=>normalize_(r[dev.idx.DeviceCode]).toUpperCase())
+    .filter(Boolean);
+
+  // fallback: if Devices is empty, infer from Loans
+  let total = activeDevices.length;
+  if(total===0){
+    const s=new Set();
+    rows.forEach(r=>{
+      const code=normalize_(r[idx.DeviceCode]).toUpperCase();
+      if(code) s.add(code);
+    });
+    total=s.size;
+  }
+
+  // ⭐ Dashboard metrics: นับ "ณ วันนี้" เท่านั้น (BorrowDate = วันนี้ และยังไม่คืน/ยกเลิก)
+  const todayISO = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+
+  // Active statuses that block availability for today
+  const isActiveStatus = (st)=> {
+    st = (st||'').toUpperCase();
+    return (st==='BOOKED' || st==='IN_USE' || st==='BORROWED' || st===''); // เผื่อเว้นว่าง/เก่า
+  };
+
+  // 2) distinct devices that are currently booked/inuse today (and not returned/cancelled)
+  const inuseSet = new Set();
+  rows.forEach(r=>{
+    const code = normalize_(r[idx.DeviceCode]).toUpperCase();
+    if(!code) return;
+
+    const bDate = dateISOFromCell_(r[idx.BorrowDate]);
+    if(bDate !== todayISO) return;
+
+    const st = (normalize_(r[idx.Status])||'').toUpperCase();
+    if(!isActiveStatus(st)) return;
+
+    const returnDate = dateISOFromCell_(r[idx.ReturnDate]);
+    const cancelDT = normalize_(r[idx.ReturnNote] || r[idx.ReturnTime] || '');
+    // ถ้ามี ReturnDate หรือ status เป็น CANCELLED/RETURNED ให้ไม่นับ
+    if(returnDate) return;
+    if(st==='CANCELLED' || st==='RETURNED') return;
+
+    // ถ้าระบบเก็บ "ยกเลิก" ด้วย ReturnDate/ReturnTime ก็จะถูกกรองออกแล้วด้านบน
+    inuseSet.add(code);
+  });
+
+  // 3) issue (ชำรุด/สูญหาย) อิงจากสถานะล่าสุดของแต่ละเครื่อง (ไม่ผูกกับวันที่)
+  const latestByDevice = {};
+  rows.forEach((r, i)=>{
+    const code = normalize_(r[idx.DeviceCode]).toUpperCase();
+    if(!code) return;
+    const created = normalize_(r[idx.CreatedAt]);
+    const prev = latestByDevice[code];
+    if(!prev){
+      latestByDevice[code] = { r, i };
+      return;
+    }
+    const prevCreated = normalize_(prev.r[idx.CreatedAt]);
+    if(created > prevCreated || (created === prevCreated && i > prev.i)){
+      latestByDevice[code] = { r, i };
+    }
+  });
+
+  let issue = 0;
+  Object.keys(latestByDevice).forEach(code=>{
+    const st = (normalize_(latestByDevice[code].r[idx.Status])||'').toUpperCase();
+    if(st==='DAMAGED' || st==='LOST') issue++;
+  });
+
+  const inuse = inuseSet.size;
+  const available = Math.max(0, total - inuse - issue);
+
+  return {ok:true,metrics:{total,available,inuse,issue}};
+}
+
+function apiListUsage_(e){
+  const p=e.parameter||{};
+  const date=normalize_(p.date);
+  if(!date) return {ok:false,error:'Missing date'};
+  const { rows, idx } = readSheet_(SHEET.LOANS);
+
+  const out=[];
+  rows.forEach(r=>{
+    const bDate=dateISOFromCell_(r[idx.BorrowDate]);
+    if(bDate!==date) return;
+
+    const dev=normalize_(r[idx.DeviceCode]).toUpperCase();
+    const borrower=normalize_(r[idx.BorrowerName]);
+
+    const returnDate=dateISOFromCell_(r[idx.ReturnDate]);
+    const stRaw = (normalize_(r[idx.Status]).toUpperCase()||'BOOKED');
+    const st = effectiveStatus_(bDate, r[idx.StartTime], r[idx.EndTime], returnDate, stRaw);
+    const returnTime=fmtTime_(r[idx.ReturnTime]);
+    const returnDT= returnDate ? (returnTime ? (returnDate+' '+returnTime) : returnDate) : '';
+
+    let overdue=false;
+    if(st==='IN_USE' && !returnDate){
+      try{
+        const now=new Date();
+        const rEnd=timeToMin_(r[idx.EndTime]);
+        const endMin=isNaN(rEnd)?0:rEnd;
+        const hh=Math.floor(endMin/60), mm=endMin%60;
+        const due=new Date(date+'T00:00:00');
+        due.setHours(hh,mm,0,0);
+        overdue = now.getTime() > due.getTime();
+      }catch(_){ }
+    }
+
+    out.push({
+      device:dev,
+      borrower,
+      date:bDate,
+      start:fmtTime_(r[idx.StartTime]),
+      end:fmtTime_(r[idx.EndTime]),
+      returnDT,
+      status:st,
+      location: normalize_(r[idx.Location]),
+      overdue
+    });
+  });
+
+  // เรียงตามเวลาเริ่ม (ถ้าไม่มีให้เรียงตามรหัสเครื่อง)
+  out.sort((a,b)=>{
+    const sa=timeToMin_(a.start), sb=timeToMin_(b.start);
+    if(isNaN(sa) && isNaN(sb)) return String(a.device).localeCompare(String(b.device));
+    if(isNaN(sa)) return 1;
+    if(isNaN(sb)) return -1;
+    if(sa!==sb) return sa-sb;
+    return String(a.device).localeCompare(String(b.device));
+  });
+
+  return {ok:true,rows:out,version:VERSION};
+}
+
+function apiBorrow_(e) {
+  const p = e.parameter || {};
+  const sap = normalize_(p.sap);
+  const device = normalize_(p.device).toUpperCase();
+  const date = normalize_(p.date); 
+  const start = normalize_(p.start);
+  const end = normalize_(p.end);
+
+  // 1. ตรวจสอบข้อมูลเบื้องต้น
+  const uRow = findUserBySap_(sap);
+  if (!uRow) return { ok: false, error: 'Unauthorized' };
+  if (!device || !date) return { ok: false, error: 'ข้อมูลไม่ครบถ้วน' };
+
+  const pack = readSheet_(SHEET.LOANS);
+  const sh = pack.sh;
+  const idx = pack.idx;
+
+  // 2. ตรวจสอบการทับซ้อน (จุดสำคัญ)
+  if (hasTimeConflict_(sh, idx, device, date, start, end, null)) {
+    return { 
+      ok: false, 
+      error: "มีผู้ใช้จองเครื่องในช่วงเวลาดังกล่าว โปรดตรวจสอบอีกครั้ง" 
+    };
+  }
+
+  // 3. กำหนดสถานะและบันทึก
+  let status = 'BOOKED';
+  const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  if (date === today) {
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    if (nowMin >= timeToMin_(start) && nowMin <= timeToMin_(end)) status = 'IN_USE';
+  }
+
+  const rowId = Date.now();
+  sh.appendRow([
+    rowId, nowISO_(), uRow.user, sap, device,
+    date, "'" + start, "'" + end,
+    normalize_(p.purpose), normalize_(p.location), normalize_(p.note),
+    '', '', '', status
+  ]);
+
+  return { ok: true, rowId: rowId };
+}
+
+function apiCheckAvailability_(e){
+  const p = (e && e.parameter) ? e.parameter : {};
+  const deviceCode = normalize_(p.deviceCode || p.device || '').toUpperCase();
+  const borrowDate = normalize_(p.borrowDate || p.date || ''); // yyyy-MM-dd
+  const startTime  = normalize_(p.startTime || p.start || '');
+  const endTime    = normalize_(p.endTime || p.end || '');
+  const excludeRowId = (p.excludeRowId!=null && String(p.excludeRowId).trim()!=='') ? Number(p.excludeRowId) : null;
+
+  if(!deviceCode || !borrowDate || !startTime || !endTime){
+    return { ok:false, message:'missing required fields' };
+  }
+  const sMin = timeToMin_(startTime);
+  const eMin = timeToMin_(endTime);
+  if(!isFinite(sMin) || !isFinite(eMin) || eMin<=sMin){
+    return { ok:false, message:'invalid time range' };
+  }
+
+  const pack = readSheet_(SHEET.LOANS);
+  const conflict = hasTimeConflict_(pack.sh, pack.idx, deviceCode, borrowDate, startTime, endTime, excludeRowId);
+  return { ok:true, conflict:!!conflict, message: conflict ? 'เครื่องถูกยืมใช้งานแล้ว' : '' };
+}
+
+function apiReturn_(e){
+  const p=e.parameter||{};
+  const sap=normalize_(p.sap);
+  const uRow=findUserBySap_(sap);
+  if(!uRow) return {ok:false,error:'Unauthorized'};
+  const isAdmin = String(uRow.role||'').toLowerCase()==='admin';
+
+  const rowId = (p.rowId!=null && String(p.rowId).trim()!=='') ? safeNum_(p.rowId,0) : 0;
+  const device=normalize_(p.device).toUpperCase();
+  const rNote=normalize_(p.returnNote);
+  const status=normalize_(p.status).toUpperCase() || 'RETURNED';
+
+  const _now=new Date();
+  const rDate=Utilities.formatDate(_now, TZ, 'yyyy-MM-dd');
+  const rTime=Utilities.formatDate(_now, TZ, 'HH:mm');
+
+  const { sh, idx } = readSheet_(SHEET.LOANS);
+
+  // ===== 1) Return by rowId (preferred) =====
+  if(rowId && rowId>=2){
+    const row=sh.getRange(rowId,1,1,sh.getLastColumn()).getValues()[0];
+    const rowSap=normalize_(row[idx.SAP]);
+    if(!isAdmin && rowSap!==sap) return {ok:false,error:'No permission'};
+
+    const borrowDate = dateISOFromCell_(row[idx.BorrowDate]);
+    const returnDate = dateISOFromCell_(row[idx.ReturnDate]);
+    const stRaw = (normalize_(row[idx.Status])||'BOOKED').toUpperCase();
+    const stEff = effectiveStatus_(borrowDate, row[idx.StartTime], row[idx.EndTime], returnDate, stRaw);
+
+    if(returnDate) return {ok:false,error:'รายการนี้ถูกคืน/ปิดแล้ว'};
+    if(stEff==='CANCELLED' || stEff==='RETURNED' || stEff==='DAMAGED' || stEff==='LOST') return {ok:false,error:'รายการนี้ถูกปิดแล้ว'};
+    // allow return when IN_USE / WAIT_RETURN / BOOKED (กรณีคืนก่อนเวลา)
+    sh.getRange(rowId, idx.ReturnDate+1).setValue(rDate);
+    sh.getRange(rowId, idx.ReturnTime+1).setValue("'"+rTime);
+    sh.getRange(rowId, idx.ReturnNote+1).setValue(rNote);
+    sh.getRange(rowId, idx.Status+1).setValue(status);
+    return {ok:true,row:rowId};
+  }
+
+  // ===== 2) Return latest open row by device (legacy) =====
+  if(!device) return {ok:false,error:'Missing device'};
+  const data = sh.getRange(2,1,Math.max(sh.getLastRow()-1,0),sh.getLastColumn()).getValues();
+  let targetRow=-1;
+  let targetCreated='';
+
+  for(let i=0;i<data.length;i++){
+    const r=data[i];
+    const code=normalize_(r[idx.DeviceCode]).toUpperCase();
+    if(code!==device) continue;
+
+    const rowSap=normalize_(r[idx.SAP]);
+    if(!isAdmin && rowSap!==sap) continue;
+
+    const created=normalize_(r[idx.CreatedAt]);
+    const returnDate = dateISOFromCell_(r[idx.ReturnDate]);
+    const stRaw=(normalize_(r[idx.Status])||'BOOKED').toUpperCase();
+    const stEff=effectiveStatus_(dateISOFromCell_(r[idx.BorrowDate]), r[idx.StartTime], r[idx.EndTime], returnDate, stRaw);
+    const open = (!returnDate) && (stEff==='BOOKED' || stEff==='IN_USE' || stEff==='WAIT_RETURN');
+    if(open && created>=targetCreated){
+      targetCreated=created;
+      targetRow=i+2;
+    }
+  }
+  if(targetRow<0) return {ok:false,error:'ไม่พบรายการค้างคืนของเครื่องนี้'};
+
+  sh.getRange(targetRow, idx.ReturnDate+1).setValue(rDate);
+  sh.getRange(targetRow, idx.ReturnTime+1).setValue("'"+rTime);
+  sh.getRange(targetRow, idx.ReturnNote+1).setValue(rNote);
+  sh.getRange(targetRow, idx.Status+1).setValue(status);
+  return {ok:true,row:targetRow};
+}
+
+
+function apiHistory_(e){
+  const p=e.parameter||{};
+  const sap=normalize_(p.sap);
+  const limit=safeNum_(p.limit, 200);
+
+  const yearBE=normalize_(p.yearBE);
+  const yearAD=yearBE ? (safeNum_(yearBE,0)-543) : 0;
+
+  const { rows, idx } = readSheet_(SHEET.LOANS);
+
+  const out=[];
+  rows.forEach((r,i)=>{
+    if(sap && normalize_(r[idx.SAP])!==sap) return;
+
+    const dateISO = dateISOFromCell_(r[idx.BorrowDate]); // yyyy-mm-dd
+    if(yearAD){
+      const d = new Date(dateISO);
+      if(isNaN(d.getTime()) || d.getFullYear()!==yearAD) return;
+    }
+
+    out.push({
+      rowId: safeNum_(r[idx.RowId], i+2),
+      borrower: normalize_(r[idx.BorrowerName]),
+      sap: normalize_(r[idx.SAP]),
+      device: normalize_(r[idx.DeviceCode]).toUpperCase(),
+      date: dateISO,
+      start: fmtTime_(r[idx.StartTime]),
+      end: fmtTime_(r[idx.EndTime]),
+      purpose: normalize_(r[idx.Purpose]),
+      location: normalize_(r[idx.Location]),
+      note: normalize_(r[idx.Note]),
+      returnDate: dateISOFromCell_(r[idx.ReturnDate]),
+      returnTime: fmtTime_(r[idx.ReturnTime]),
+      status: effectiveStatus_(dateISO, r[idx.StartTime], r[idx.EndTime], dateISOFromCell_(r[idx.ReturnDate]), (normalize_(r[idx.Status])||'BOOKED')),
+    });
+  });
+
+  out.sort((a,b)=>{
+    if((a.date||'')!==(b.date||'')) return (b.date||'').localeCompare(a.date||'');
+    return timeToMin_(b.start)-timeToMin_(a.start);
+  });
+
+  return {ok:true,rows:out.slice(0,limit)};
+}
+
+function apiAdminList_(e){
+  const p=e.parameter||{};
+  const sap=normalize_(p.sap);
+  const u=findUserBySap_(sap);
+  if(!u || String(u.role).toLowerCase()!=='admin') return {ok:false,error:'ต้องเป็น Admin เท่านั้น'};
+
+  const { rows, idx } = readSheet_(SHEET.LOANS);
+  const out = rows.map((r,i)=>{
+    const borrowDate = dateISOFromCell_(r[idx.BorrowDate]);
+    const returnDate = dateISOFromCell_(r[idx.ReturnDate]);
+    const returnTime = fmtTime_(r[idx.ReturnTime]);
+    const returnDT = returnDate ? (returnTime ? (returnDate+' '+returnTime) : returnDate) : '';
+    const stRaw = (normalize_(r[idx.Status])||'BOOKED').toUpperCase();
+    const st = effectiveStatus_(borrowDate, r[idx.StartTime], r[idx.EndTime], returnDate, stRaw);
+
+    return {
+      rowId: safeNum_(r[idx.RowId], i+2),
+      borrower: normalize_(r[idx.BorrowerName]),
+      device: normalize_(r[idx.DeviceCode]).toUpperCase(),
+      borrowDT: borrowDate,
+      start: fmtTime_(r[idx.StartTime]),
+      end: fmtTime_(r[idx.EndTime]),
+      returnDT,
+      status: st,
+      purpose: normalize_(r[idx.Purpose]),
+      note: normalize_(r[idx.Note]),
+      location: normalize_(r[idx.Location]),
+    };
+  });
+
+  out.sort((a,b)=>{
+    if((a.borrowDT||'')!==(b.borrowDT||'')) return (b.borrowDT||'').localeCompare(a.borrowDT||'');
+    return timeToMin_(b.start)-timeToMin_(a.start);
+  });
+
+  return {ok:true,rows:out,version:VERSION};
+}
+
+function apiDeleteRow_(e){
+  const p=e.parameter||{};
+  const rowId=safeNum_(p.rowId,0);
+  const sap=normalize_(p.sap);
+  if(rowId<2) return {ok:false,error:'Invalid rowId'};
+
+  const u=findUserBySap_(sap);
+  if(!u) return {ok:false,error:'Unauthorized'};
+
+  const sh=ss_().getSheetByName(SHEET.LOANS);
+  const head=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  const idx={}; head.forEach((h,i)=>idx[String(h).trim()]=i);
+
+  const row=sh.getRange(rowId,1,1,sh.getLastColumn()).getValues()[0];
+  const rowSap=normalize_(row[idx.SAP]);
+  const isAdmin=String(u.role||'').toLowerCase()==='admin';
+
+  if(!isAdmin && rowSap!==sap) return {ok:false,error:'No permission'};
+
+  sh.deleteRow(rowId);
+  return {ok:true};
+}
+
+function apiCancelRow_(e){
+  const p=e.parameter||{};
+  const rowId=safeNum_(p.rowId,0);
+  const sap=normalize_(p.sap);
+  if(rowId<2) return {ok:false,error:'Invalid rowId'};
+
+  const u=findUserBySap_(sap);
+  if(!u) return {ok:false,error:'Unauthorized'};
+
+  const sh=ss_().getSheetByName(SHEET.LOANS);
+  const head=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  const idx={}; head.forEach((h,i)=>idx[String(h).trim()]=i);
+
+  const row=sh.getRange(rowId,1,1,sh.getLastColumn()).getValues()[0];
+  const rowSap=normalize_(row[idx.SAP]);
+  const status=String(row[idx.Status]||'').trim().toUpperCase();
+  const isAdmin=String(u.role||'').toLowerCase()==='admin';
+
+  // allow only owner (or admin)
+  if(!isAdmin && rowSap!==sap) return {ok:false,error:'No permission'};
+  // allow cancel only when BOOKED (or admin can cancel anything)
+  if(!isAdmin && status!=='BOOKED') return {ok:false,error:'Only BOOKED can be cancelled'};
+
+  // write status
+  if(idx.Status!=null) sh.getRange(rowId, idx.Status+1).setValue('CANCELLED');
+
+  // write cancelled timestamp into ReturnDate/ReturnTime
+  const now = new Date();
+  if(idx.ReturnDate!=null) sh.getRange(rowId, idx.ReturnDate+1).setValue(Utilities.formatDate(now, TZ, 'yyyy-MM-dd'));
+  if(idx.ReturnTime!=null) sh.getRange(rowId, idx.ReturnTime+1).setValue(Utilities.formatDate(now, TZ, 'HH:mm'));
+  // optional note
+  if(idx.ReturnNote!=null){
+    const prev=String(row[idx.ReturnNote]||'').trim();
+    sh.getRange(rowId, idx.ReturnNote+1).setValue(prev? (prev+' | Cancelled') : 'Cancelled');
+  }
+  return {ok:true};
+}
+
+function apiGetRow_(e){
+  const p=e.parameter||{};
+  const rowId=safeNum_(p.rowId,0);
+  const sap=normalize_(p.sap);
+  if(rowId<2) return {ok:false,error:'Invalid rowId'};
+
+  const u=findUserBySap_(sap);
+  if(!u) return {ok:false,error:'Unauthorized'};
+
+  const sh=ss_().getSheetByName(SHEET.LOANS);
+  const head=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+  const idx={}; head.forEach((h,i)=>idx[String(h).trim()]=i);
+
+  const row=sh.getRange(rowId,1,1,sh.getLastColumn()).getValues()[0];
+  const rowSap=normalize_(row[idx.SAP]);
+  const isAdmin=String(u.role||'').toLowerCase()==='admin';
+  if(!isAdmin && rowSap!==sap) return {ok:false,error:'No permission'};
+
+  const device = normalize_(row[idx.DeviceCode]).toUpperCase();
+  const borrower = normalize_(row[idx.BorrowerName]);
+  const dateISO = dateISOFromCell_(row[idx.BorrowDate]);
+  const start = fmtTime_(row[idx.StartTime]);
+  const end = fmtTime_(row[idx.EndTime]);
+  const purpose = normalize_(row[idx.Purpose]);
+  const location = normalize_(row[idx.Location]);
+  const note = normalize_(row[idx.Note]);
+  const status = (normalize_(row[idx.Status])||'BOOKED').toUpperCase();
+  const returnDate = dateISOFromCell_(row[idx.ReturnDate]);
+  const returnTime = fmtTime_(row[idx.ReturnTime]);
+
+  // ส่งทั้งแบบชื่อคอลัมน์เดิม และ alias สำหรับหน้าเว็บ
+  const out = {
+    rowId,
+    borrower, device, dateISO, start, end, purpose, location, note, status,
+    returnDate, returnTime
+  };
+
+  // สำหรับหน้า user (editLoan) ที่อ้างคอลัมน์ตรง
+  out.DeviceCode = device;
+  out.BorrowDate = dateISO;
+  out.StartTime  = start;
+  out.EndTime    = end;
+  out.Purpose    = purpose;
+  out.Location   = location;
+  out.Note       = note;
+  out.Status     = status;
+  out.ReturnDate = returnDate;
+  out.ReturnTime = returnTime;
+  out.BorrowerName = borrower;
+  out.SAP = rowSap;
+
+  return {ok:true,row:out};
+}
+
+function apiUpdateRow_(e) {
+  const p = e.parameter || {};
+  const rowId = safeNum_(p.rowId, 0);
+  if (rowId < 2) return { ok: false, error: 'Invalid rowId' };
+
+  const sap = normalize_(p.sap);
+  const u = findUserBySap_(sap);
+  if (!u) return { ok: false, error: 'Unauthorized' };
+
+  const sh = ss_().getSheetByName(SHEET.LOANS);
+  const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const idx = {}; 
+  head.forEach((h, i) => idx[String(h).trim()] = i);
+
+  const current = sh.getRange(rowId, 1, 1, sh.getLastColumn()).getValues()[0];
+  const rowSap = normalize_(current[idx.SAP]);
+  const isAdmin = String(u.role || '').toLowerCase() === 'admin';
+  if (!isAdmin && rowSap !== sap) return { ok: false, error: 'No permission' };
+
+  // ดึงค่าปัจจุบันจาก Sheet มาเตรียมไว้
+  const borrowDateCur = dateISOFromCell_(current[idx.BorrowDate]);
+  
+  // กำหนดค่า "ที่จะใช้ตรวจสอบ" (ถ้าใน parameter ไม่มี ให้ใช้ค่าเดิมใน Sheet)
+  const effDevice = (p.device || normalize_(current[idx.DeviceCode])).toUpperCase();
+  const effDate   = p.dateISO || borrowDateCur;
+  const effStart  = p.start   || fmtTime_(current[idx.StartTime]);
+  const effEnd    = p.end     || fmtTime_(current[idx.EndTime]);
+
+  // --- [จุดสำคัญ] ตรวจสอบการทับซ้อน โดยยกเว้นแถวตัวเอง (rowId) ---
+  if (hasTimeConflict_(sh, idx, effDevice, effDate, effStart, effEnd, rowId)) {
+    return { 
+      ok: false, 
+      error: "มีผู้ใช้จองเครื่องในช่วงเวลาดังกล่าว โปรดตรวจสอบอีกครั้ง" 
+    };
+  }
+  // --------------------------------------------------------
+
+  // บันทึกข้อมูล (ถ้าผ่านการเช็ค Conflict มาได้)
+  if (p.device) sh.getRange(rowId, idx.DeviceCode + 1).setValue(effDevice);
+  if (p.borrower) sh.getRange(rowId, idx.BorrowerName + 1).setValue(p.borrower);
+  if (p.dateISO) sh.getRange(rowId, idx.BorrowDate + 1).setValue(effDate);
+  if (p.start) sh.getRange(rowId, idx.StartTime + 1).setValue("'" + effStart);
+  if (p.end) sh.getRange(rowId, idx.EndTime + 1).setValue("'" + effEnd);
+  
+  sh.getRange(rowId, idx.Purpose + 1).setValue(normalize_(p.purpose));
+  sh.getRange(rowId, idx.Location + 1).setValue(normalize_(p.location));
+  sh.getRange(rowId, idx.Note + 1).setValue(normalize_(p.note));
+
+  // คงสถานะเป็น BOOKED หลังแก้ไข (หรือตาม Logic ของคุณ)
+  if (idx.Status != null) sh.getRange(rowId, idx.Status + 1).setValue('BOOKED');
+
+  return { ok: true };
+}
+
+function apiListDevices_(e){
+  const { rows, idx } = readSheet_(SHEET.DEVICES);
+  const devs=[];
+  rows.forEach(r=>{
+    const code=normalize_(r[idx.DeviceCode]).toUpperCase();
+    if(!code) return;
+    const active=String(r[idx.Active]).toLowerCase();
+    const ok=(active===''||active==='true'||active==='1'||active==='yes');
+    if(ok) devs.push(code);
+  });
+  devs.sort();
+  return { ok:true, devices: devs };
+}
+
+function apiListLocations_(e){
+  const sh=ss_().getSheetByName(SHEET.LOCATION);
+  if(!sh) return { ok:true, locations:['อื่นๆ'] };
+  const v=sh.getDataRange().getValues();
+  const out=[];
+  for(let i=1;i<v.length;i++){
+    const s=normalize_(v[i][0]);
+    if(!s) continue;
+    if(out.indexOf(s)===-1) out.push(s);
+  }
+  // เติม "อื่นๆ" ท้ายรายการเสมอ
+  if(out.indexOf('อื่นๆ')===-1) out.push('อื่นๆ');
+  return { ok:true, locations: out };
+}
+
+function hasTimeConflict_(sh, idx, device, dateISO, start, end, excludeRowId) {
+  const dev = String(device || '').trim().toUpperCase();
+  const d1 = normalize_(dateISO);                 // วันที่ที่ผู้ใช้เลือก (yyyy-MM-dd)
+  let s1 = timeToMin_(start);
+  let e1 = timeToMin_(end);
+
+  if (!dev || !d1 || !isFinite(s1) || !isFinite(e1)) return false;
+
+  // --- helper: เพิ่มวัน 1 วัน (รองรับเคสคร่อมเที่ยงคืน) ---
+  function addDaysISO_(iso, days){
+    const base = new Date(iso + 'T00:00:00');
+    if (isNaN(base.getTime())) return iso;
+    base.setDate(base.getDate() + (days||0));
+    return Utilities.formatDate(base, TZ, 'yyyy-MM-dd');
+  }
+
+  // --- แปลงช่วงเวลาใหม่ให้เป็น "รายการช่วง" (1 หรือ 2 ช่วง) ---
+  // ปกติ: [d1, s1-e1]
+  // คร่อมเที่ยงคืน (e1 <= s1): [d1, s1-1440) และ [d2, 0-e1]
+  const segmentsNew = [];
+  if (e1 > s1) {
+    segmentsNew.push({ date: d1, start: s1, end: e1 });
+  } else {
+    const d2 = addDaysISO_(d1, 1);
+    segmentsNew.push({ date: d1, start: s1, end: 1440 });
+    segmentsNew.push({ date: d2, start: 0,  end: e1 });
+  }
+
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return false;
+
+  const data = sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).getValues();
+
+  for (let i = 0; i < data.length; i++) {
+    const rowNum = i + 2;
+    if (excludeRowId && rowNum === Number(excludeRowId)) continue;
+
+    const r = data[i];
+    const st = String(r[idx.Status] || '').trim().toUpperCase();
+
+    // ข้ามรายการที่ "ปิดงานแล้ว"
+    if (['CANCELLED', 'RETURNED', 'REJECTED', 'DAMAGED', 'LOST'].indexOf(st) !== -1) continue;
+
+    const rDev = String(r[idx.DeviceCode] || '').trim().toUpperCase();
+    if (rDev !== dev) continue;
+
+    // ⭐ สำคัญ: วันที่ในชีตอาจเป็น Date/serial -> ต้องแปลงเป็น yyyy-MM-dd
+    const rDate = dateISOFromCell_(r[idx.BorrowDate]);
+
+    // เวลาในชีต (รองรับ Date / number fraction / string)
+    let s2 = timeToMin_(r[idx.StartTime]);
+    let e2 = timeToMin_(r[idx.EndTime]);
+    if (!isFinite(s2) || !isFinite(e2)) continue;
+
+    // แปลงช่วงเวลาเดิมให้เป็น segments เช่นเดียวกัน (รองรับคร่อมเที่ยงคืน)
+    const segmentsOld = [];
+    if (e2 > s2) {
+      segmentsOld.push({ date: rDate, start: s2, end: e2 });
+    } else {
+      const rDate2 = addDaysISO_(rDate, 1);
+      segmentsOld.push({ date: rDate,  start: s2, end: 1440 });
+      segmentsOld.push({ date: rDate2, start: 0,  end: e2 });
+    }
+
+    // ตรวจชนแบบ half-open interval: [start, end)
+    // -> end ตรงกับ start อีกอัน "ไม่ชน" (เช่น 10:00-11:00 ต่อ 09:00-10:00)
+    for (const n of segmentsNew) {
+      for (const o of segmentsOld) {
+        if (n.date !== o.date) continue;
+        if (n.start < o.end && n.end > o.start) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+
+
+function apiGetLoanYears_(){
+  const { rows, idx } = readSheet_(SHEET.LOANS);
+  const years = new Set();
+
+  rows.forEach(r=>{
+    const raw = r[idx.BorrowDate];
+    if(raw === '' || raw == null) return;
+
+    let d = null;
+
+    if (raw instanceof Date && !isNaN(raw.getTime())) {
+      d = raw;
+    } else if (typeof raw === 'number' && isFinite(raw)) {
+      // Google Sheets serial date
+      d = new Date(Math.round((raw - 25569) * 86400 * 1000));
+    } else {
+      const s = String(raw).trim();
+      if(!s) return;
+
+      // yyyy-mm-dd
+      let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m) {
+        d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      } else {
+        // dd/mm/yyyy or dd-mm-yyyy
+        m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (m) {
+          d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+        } else {
+          const tmp = new Date(s);
+          if (!isNaN(tmp.getTime())) d = tmp;
+        }
+      }
+    }
+
+    if (d && !isNaN(d.getTime())) {
+      years.add(d.getFullYear() + 543);
+    }
+  });
+
+  const result = Array.from(years).sort((a,b)=>b-a);
+  return { ok:true, years: result };
+}
