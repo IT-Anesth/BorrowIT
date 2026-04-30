@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>ระบบยืม-คืน Notebook</title>
+  <title>ระบบยืม-คืน Notebook/อุปกรณ์ IT</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -603,7 +603,7 @@ object-fit:contain;
     <div class="brand">
       <div class="logo"><img src="logo1.png" alt="Siriraj Anesthesiology Logo"></div>
       <div class="title">
-          <h1>ระบบยืม-คืน Notebook</h1>
+          <h1>ระบบยืม-คืน Notebook/อุปกรณ์ภาควิชาฯ</h1>
           <p>ภาควิชาวิสัญญีวิทยา คณะแพทยศาสตร์ศิริราชพยาบาล</p>
           <div id="userInline" class="userInline hide"></div>
       </div>
@@ -615,7 +615,7 @@ object-fit:contain;
   </div>
   <nav>
     <div class="wrap navrow" id="navRow" style="display:none">
-      <button class="navbtn active" id="tabBorrow" onclick="openBorrow()">ยืม Notebook</button>
+      <button class="navbtn active" id="tabBorrow" onclick="openBorrow()">ยืม Notebook/อุปกรณ์</button>
       <button class="navbtn" id="tabHistory" onclick="openHistory()">ประวัติยืม</button>
     </div>
   </nav>
@@ -671,7 +671,7 @@ object-fit:contain;
 
     <div class="card">
       <div class="hd">
-        <h2>รายงานการใช้ Notebook</h2>
+        <h2>รายงานการใช้ Notebook/อุปกรณ์</h2>
         <div class="row" style="gap:10px">
           <div>
             <label>วันที่</label>
@@ -696,7 +696,7 @@ object-fit:contain;
   </section>
 </main>
 
-<footer>Copyright © 2025 ระบบยืม-คืน Notebook | ภาควิชาวิสัญญีวิทยา คณะแพทยศาสตร์ศิริราชพยาบาล | 
+<footer>Copyright © 2025 ระบบยืม-คืน Notebook/อุปกรณ์ภาควิชาฯ | ภาควิชาวิสัญญีวิทยา คณะแพทยศาสตร์ศิริราชพยาบาล | 
   <span style="font-size:10px;opacity:.85">Version 1.1</span></footer>
 
 <div class="backdrop" id="backdrop" onclick="closeModal(event)">
@@ -1264,7 +1264,7 @@ function borrowFormHtml(){
 async function openBorrow(){
   setActiveNav('borrow'); 
   setActiveTab('tabBorrow'); 
-  showModal('ยืม Notebook', borrowFormHtml());
+  showModal('ยืม Notebook/อุปกรณ์', borrowFormHtml());
   wireBorrowLiveCheck_();
   setTimeout(()=>{ _runBorrowAvailabilityCheck_({silent:true}); }, 0);
 
