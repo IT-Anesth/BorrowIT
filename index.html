@@ -595,6 +595,285 @@ object-fit:contain;
     .toastItem{pointer-events:none;min-width:240px;max-width:92vw;padding:10px 12px;border-radius:14px;background:#0f172a;color:#fff;font-weight:600;box-shadow:0 10px 30px rgba(15,23,42,.25);opacity:0;transform:translateY(-6px);transition:all .18s ease}
     .toastItem.show{opacity:1;transform:translateY(0)}
     .toastItem.err{background:#7f1d1d}
+/* =========================================
+   ULTRA RESPONSIVE MOBILE/TABLET UI
+========================================= */
+
+/* ===== Tablet ===== */
+@media (max-width: 1024px){
+
+  main{
+    padding:12px;
+  }
+
+  .topbar{
+    flex-wrap:wrap;
+    gap:12px;
+  }
+
+  .brand{
+    width:100%;
+  }
+
+  .right{
+    width:100%;
+    justify-content:flex-end;
+  }
+
+  .navrow{
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    padding-bottom:4px;
+  }
+
+  .navbtn{
+    flex:0 0 auto;
+    white-space:nowrap;
+  }
+
+  /* dashboard */
+  .grid4{
+    grid-template-columns:repeat(2,1fr) !important;
+    gap:12px !important;
+  }
+
+  .card.stat .metric .n{
+    font-size:30px !important;
+  }
+
+  /* report section */
+  .tbl{
+    min-width:700px;
+  }
+
+  .card{
+    overflow:hidden;
+  }
+
+  .card .bd{
+    overflow-x:auto;
+  }
+
+  /* modal */
+  .modal{
+    width:100%;
+    max-width:100%;
+    border-radius:18px;
+  }
+
+  .modal .mbd{
+    max-height:80vh;
+  }
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 640px){
+
+  body{
+    font-size:14px;
+  }
+
+  header{
+    position:sticky;
+    top:0;
+  }
+
+  .wrap{
+    padding:10px;
+  }
+
+  .topbar{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .brand{
+    width:100%;
+    align-items:center;
+  }
+
+  .logo img{
+    height:50px;
+  }
+
+  .title{
+    width:100%;
+  }
+
+  .title h1{
+    font-size:17px !important;
+    line-height:1.3;
+    white-space:normal !important;
+  }
+
+  .title p{
+    font-size:12px;
+    line-height:1.3;
+    white-space:normal !important;
+  }
+
+  .right{
+    width:100%;
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+  }
+
+  .right .btn{
+    flex:1;
+  }
+
+  /* nav */
+  .navrow{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    gap:8px;
+    padding-bottom:4px;
+  }
+
+  .navbtn{
+    flex:0 0 auto;
+    font-size:13px;
+    padding:10px 12px;
+    white-space:nowrap;
+  }
+
+  /* dashboard cards */
+  .grid4{
+    grid-template-columns:repeat(2,1fr) !important;
+    gap:10px !important;
+  }
+
+  .card.stat{
+    border-radius:16px;
+  }
+
+  .card.stat .hd{
+    padding:10px 8px !important;
+  }
+
+  .card.stat .hd h2{
+    font-size:13px !important;
+  }
+
+  .card.stat .metric .n{
+    font-size:24px !important;
+  }
+
+  .card.stat .lbl{
+    font-size:11px !important;
+  }
+
+  /* form */
+  .row{
+    flex-direction:column;
+    align-items:stretch !important;
+  }
+
+  .row > div{
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  input,
+  select,
+  textarea,
+  .btn{
+    width:100%;
+  }
+
+  /* tables */
+  .tbl{
+    min-width:680px;
+  }
+
+  .tbl thead th{
+    font-size:12px;
+    padding:8px;
+  }
+
+  .tbl tbody td{
+    font-size:12px;
+    padding:8px;
+  }
+
+  /* card horizontal scroll */
+  .card .bd{
+    overflow-x:auto;
+  }
+
+  /* modal */
+  .backdrop{
+    padding:10px;
+  }
+
+  .modal{
+    width:100%;
+    border-radius:16px;
+  }
+
+  .modal .mhd{
+    padding:12px;
+  }
+
+  .modal .mbd{
+    padding:12px;
+    max-height:82vh;
+  }
+
+  /* login */
+  #secLogin .login-glass{
+    width:100%;
+    padding:22px 16px;
+    border-radius:20px;
+  }
+
+  #secLogin .login-avatar{
+    width:100px;
+    height:100px;
+    margin-top:-65px;
+  }
+
+  #secLogin .login-avatar img{
+    width:72px;
+  }
+
+  #secLogin .login-title{
+    font-size:24px;
+  }
+
+  .btn-login2{
+    font-size:15px;
+  }
+
+}
+
+/* ===== Small Mobile ===== */
+@media (max-width: 390px){
+
+  .grid4{
+    grid-template-columns:1fr !important;
+  }
+
+  .title h1{
+    font-size:15px !important;
+  }
+
+  .title p{
+    font-size:11px !important;
+  }
+
+  .card.stat .metric .n{
+    font-size:22px !important;
+  }
+
+  .navbtn{
+    font-size:12px;
+    padding:9px 10px;
+  }
+
+}
+
 </style>
 </head>
 <body>
@@ -660,44 +939,169 @@ object-fit:contain;
 </section>
 
   <section id="secDash" class="hide">
-    <div class="grid4">
-      <div class="card stat total"><div class="hd"><h2>ทั้งหมด</h2><span class="chip">Total</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mTotal">0</div></div></div></div></div>
-      <div class="card stat avail"><div class="hd"><h2>พร้อมให้ยืม</h2><span class="chip ok">Available</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mAvail">0</div></div></div></div></div>
-      <div class="card stat inuse"><div class="hd"><h2>ถูกยืมอยู่</h2><span class="chip warn">In use</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mInuse">0</div></div></div></div></div>
-      <div class="card stat issue"><div class="hd"><h2>ชำรุด/สูญหาย</h2><span class="chip bad">Issue</span></div><div class="bd"><div class="metric"><div><div class="lbl">จำนวน</div><div class="n" id="mIssue">0</div></div></div></div></div>
-    </div>
 
-    <div style="height:14px"></div>
+<div class="hd">
+      <h3>📊รายงาน Dashboard การยืม-คืน Notebook/อุปกรณ์ (ณ ปัจจุบัน)</h3>
 
-    <div class="card">
+      <div class="row" style="gap:10px">
+
+        <div>
+
+  <!-- DASHBOARD METRICS -->
+  <div class="grid4">
+
+    <div class="card stat total">
       <div class="hd">
-        <h2>รายงานการใช้ Notebook/อุปกรณ์</h2>
-        <div class="row" style="gap:10px">
-          <div>
-            <label>วันที่</label>
-            <div style="display:flex;gap:10px;align-items:center">
-              <input type="date" id="fDate" class="dateIconOnly" lang="en-GB">
-              <div class="chip" id="fDateLabel">-</div>
-            </div>
-          </div>
-          <div style="align-self:end"><button class="btn" onclick="loadUsage()">แสดงรายงาน</button></div>
-        </div>
+        <h2>ทั้งหมด</h2>
+        <span class="chip">Total</span>
       </div>
       <div class="bd">
-        <div class="muted" style="margin-bottom:8px">* แสดงรายการยืม-คืนทั้งหมดของวันที่เลือก</div>
-        <div style="overflow:auto">
-          <table class="tbl" id="tblUsage">
-            <thead><tr><th>รหัสเครื่อง</th><th>ผู้ยืม</th><th>วดป</th><th>เวลาเริ่ม-สิ้นสุด</th><th>คืน/ยกเลิก</th><th>สถานะ</th><th>สถานที่</th></tr></thead>
-            <tbody><tr><td colspan="7" class="muted">ยังไม่มีข้อมูล</td></tr></tbody>
-          </table>
+        <div class="metric">
+          <div>
+            <div class="lbl">จำนวน</div>
+            <div class="n" id="mTotal">0</div>
+          </div>
         </div>
       </div>
     </div>
-  </section>
+
+    <div class="card stat avail">
+      <div class="hd">
+        <h2>พร้อมให้ยืม</h2>
+        <span class="chip ok">Available</span>
+      </div>
+      <div class="bd">
+        <div class="metric">
+          <div>
+            <div class="lbl">จำนวน</div>
+            <div class="n" id="mAvail">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card stat inuse">
+      <div class="hd">
+        <h2>ถูกยืมอยู่</h2>
+        <span class="chip warn">In use</span>
+      </div>
+      <div class="bd">
+        <div class="metric">
+          <div>
+            <div class="lbl">จำนวน</div>
+            <div class="n" id="mInuse">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card stat issue">
+      <div class="hd">
+        <h2>ชำรุด/สูญหาย</h2>
+        <span class="chip bad">Issue</span>
+      </div>
+      <div class="bd">
+        <div class="metric">
+          <div>
+            <div class="lbl">จำนวน</div>
+            <div class="n" id="mIssue">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="height:14px"></div>
+
+  <!-- REPORT CARD -->
+  <div class="card">
+
+    <div class="hd">
+      <h3>📋รายการยืมใช้  Notebook/อุปกรณ์ (ประจำวัน)</h3>
+    <div class="row" style="gap:10px">
+     
+
+<label> * ระบุวันที่ </label>
+
+        <div>
+    
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="date" id="fDate" class="dateIconOnly" lang="en-GB">
+            <div class="chip" id="fDateLabel">-</div>
+          </div>
+
+        </div>
+
+        <div style="align-self:end">
+          <button class="btn" onclick="loadUsage()">แสดงรายงาน</button>
+        </div> 
+      </div>
+    </div>
+
+        <!-- NOTEBOOK -->
+        <h3 class="muted" style="margin-bottom:10px">🖥️ Notebook</h3>
+
+        <table class="tbl" id="tblUsageNB">
+
+          <thead>
+            <tr>
+              <th>รหัสเครื่อง</th>
+              <th>ผู้ยืม</th>
+              <th>วดป</th>
+              <th>เวลาเริ่ม-สิ้นสุด</th>
+              <th>คืน/ยกเลิก</th>
+              <th>สถานะ</th>
+              <th>สถานที่</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td colspan="7" class="muted">ยังไม่มีข้อมูล</td>
+            </tr>
+          </tbody>
+
+        </table>
+
+        <div style="height:20px"></div>
+
+        <!-- SPEAKER -->
+        <h3 class="muted" style="margin-bottom:10px">🔊 Speaker</h3>
+
+        <table class="tbl" id="tblUsageSPK">
+
+          <thead>
+            <tr>
+              <th>รหัสเครื่อง</th>
+              <th>ผู้ยืม</th>
+              <th>วดป</th>
+              <th>เวลาเริ่ม-สิ้นสุด</th>
+              <th>คืน/ยกเลิก</th>
+              <th>สถานะ</th>
+              <th>สถานที่</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td colspan="7" class="muted">ยังไม่มีข้อมูล</td>
+            </tr>
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
 </main>
 
 <footer>Copyright © 2025 ระบบยืม-คืน Notebook/อุปกรณ์ภาควิชาฯ | ภาควิชาวิสัญญีวิทยา คณะแพทยศาสตร์ศิริราชพยาบาล | 
-  <span style="font-size:10px;opacity:.85">Version 1.1</span></footer>
+  <span style="font-size:10px;opacity:.85">Version 2</span></footer>
 
 <div class="backdrop" id="backdrop" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -1187,30 +1591,43 @@ async function refreshDashboard(){
   }catch(e){ console.warn(e); }
 }
 
+
 async function loadUsage(){
   setDefaultFilters();
-  const date=document.getElementById('fDate').value;
-  const tb=document.querySelector('#tblUsage tbody');
-  tb.innerHTML='<tr><td colspan="7" class="muted">กำลังโหลด...</td></tr>';
-  try{
-    const res=await jsonp('listUsage',{date});
-    if(!res||!res.ok){ tb.innerHTML='<tr><td colspan="7" class="muted">โหลดข้อมูลไม่สำเร็จ</td></tr>'; return; }
-    const rows=res.rows||[];
-    if(!rows.length){ tb.innerHTML='<tr><td colspan="7" class="muted">ยังไม่มีข้อมูล</td></tr>'; return; }
 
-    // ✅ เรียง: รหัสเครื่องน้อย→มาก และเวลาเริ่ม/สิ้นสุดภายในรหัสเครื่อง
+  const date = document.getElementById('fDate').value;
+
+  const tbNB  = document.querySelector('#tblUsageNB tbody');
+  const tbSPK = document.querySelector('#tblUsageSPK tbody');
+
+  tbNB.innerHTML  = '<tr><td class="muted">กำลังโหลด...</td></tr>';
+  tbSPK.innerHTML = '<tr><td class="muted">กำลังโหลด...</td></tr>';
+
+  try{
+    const res = await jsonp('listUsage',{date});
+    if(!res || !res.ok){
+      tbNB.innerHTML = tbSPK.innerHTML = '<tr><td class="muted">โหลดข้อมูลไม่สำเร็จ</td></tr>';
+      return;
+    }
+
+    const rows = res.rows || [];
+    if(!rows.length){
+      tbNB.innerHTML = tbSPK.innerHTML = '<tr><td class="muted">ยังไม่มีข้อมูล</td></tr>';
+      return;
+    }
+
+    // sort เหมือนเดิม
     rows.sort((a,b)=>{
-      const dc=cmpDeviceCode_(a.device,b.device);
+      const dc = cmpDeviceCode_(a.device,b.device);
       if(dc!==0) return dc;
-      const sa=timeToMin_(a.start), sb=timeToMin_(b.start);
-      if(sa!==sb) return sa-sb;
-      const ea=timeToMin_(a.end), eb=timeToMin_(b.end);
-      if(ea!==eb) return ea-eb;
-      return 0;
+      return timeToMin_(a.start) - timeToMin_(b.start);
     });
 
-    tb.innerHTML=rows.map(r=>{
-      const loc = r.location || '-';
+    // 🔥 แยกกลุ่ม
+    const nb  = rows.filter(r => (r.device||'').startsWith('NB'));
+    const spk = rows.filter(r => (r.device||'').startsWith('SPK'));
+
+    const render = (arr) => arr.map(r => {
       return `<tr>
         <td><b>${escapeHtml(r.device)}</b></td>
         <td>${escapeHtml(r.borrower||'-')}</td>
@@ -1218,12 +1635,18 @@ async function loadUsage(){
         <td>${escapeHtml((r.start||'-')+' - '+(r.end||'-'))}</td>
         <td>${escapeHtml(formatReturnDT_(r))}</td>
         <td>${statusChip(r.status,r.overdue)}</td>
-        <td>${escapeHtml(loc)}</td>
+        <td>${escapeHtml(r.location||'-')}</td>
       </tr>`;
     }).join('');
-  }catch(e){ tb.innerHTML=`<tr><td colspan="7" class="muted">เชื่อมต่อไม่ได้: ${escapeHtml(e.message||String(e))}</td></tr>`; }
-}
 
+    tbNB.innerHTML  = render(nb);
+    tbSPK.innerHTML = render(spk);
+
+  }catch(e){
+    tbNB.innerHTML = tbSPK.innerHTML =
+      `<tr><td class="muted">เชื่อมต่อไม่ได้: ${escapeHtml(e.message||String(e))}</td></tr>`;
+  }
+}
 function setActiveTab(id){ ['tabBorrow','tabReturn','tabHistory'].forEach(t=>{ const el=document.getElementById(t); if(el) el.classList.toggle('active',t===id); }); }
 
 function showModal(title, html){
@@ -1239,7 +1662,24 @@ function borrowFormHtml(){
   const d=todayISO();
   return `
     <div class="row" style="margin-bottom:12px">
-      <div style="flex:1 1 160px"><label>รหัสเครื่อง</label><select id="bDevice" class="inputSel"><option value="">กำลังโหลด...</option></select></div>
+      <div style="flex:1 1 160px">
+  <label>เลือกอุปกรณ์</label>
+
+  <label style="display:block;margin-bottom:6px">
+    <input type="checkbox" onclick="toggleAllDevice(this)"> เลือกทั้งหมด
+  </label>
+
+  <div id="deviceList" style="
+    max-height:160px;
+    overflow:auto;
+    border:1px solid #dde8f3;
+    border-radius:10px;
+    padding:8px;
+    background:#fff
+  ">
+    <div class="muted">กำลังโหลด...</div>
+  </div>
+</div>
       <div style="flex:0 0 220px">
         <label>วันที่ยืม/จอง</label>
         <div style="display:flex;gap:10px;align-items:center">
@@ -1275,7 +1715,24 @@ async function openBorrow(){
     if(d){ d.addEventListener('input', updateBorrowDateLabel_); d.addEventListener('change', updateBorrowDateLabel_); }
   }catch(_){}
 
-  try{ await loadDevices(); fillDeviceSelect('bDevice', true); }catch(_){ }
+ await loadDevices();
+
+const wrap = document.getElementById('deviceList');
+if(wrap){
+  wrap.innerHTML = '';
+
+  (_devicesCache || []).forEach(d=>{
+    const code = (d || '').toString().toUpperCase();
+    if(!code) return;
+
+    wrap.innerHTML += `
+      <label style="display:block;margin-bottom:6px">
+        <input type="checkbox" name="device" value="${code}">
+        ${code}
+      </label>
+    `;
+  });
+}
   initTimeSelect('bStart','06:00'); 
   initTimeSelect('bEnd','18:00');
   await refreshBorrowList();
@@ -1332,6 +1789,8 @@ async function openHistory(){
   document.getElementById('hMonth').value=String(mNow);
   await loadHistoryYear();
 }
+
+
 
 
 
@@ -1521,7 +1980,16 @@ function wireBorrowLiveCheck_(){
 }
 async function submitBorrow(){
   const btn=document.getElementById('btnBorrowSubmit');
-  const device=(document.getElementById('bDevice')?.value||'').trim();
+
+  const devices = Array.from(document.querySelectorAll('input[name="device"]:checked'))
+    .map(el => el.value);
+
+  if(devices.length === 0){
+    toast('กรุณาเลือกอุปกรณ์', true);
+    _setBorrowMsg_('กรุณาเลือกอุปกรณ์', 'error');
+    return;
+  }
+
   const date=(document.getElementById('bDate')?.value||'').trim();
   const start=(document.getElementById('bStart')?.value||'').trim();
   const end=(document.getElementById('bEnd')?.value||'').trim();
@@ -1529,63 +1997,64 @@ async function submitBorrow(){
   const location=getBorrowLocation_();
   const note=(document.getElementById('bNote')?.value||'').trim();
 
-  // validate required
-  if(!device || !date || !start || !end || !purpose || !location){
+  if(devices.length === 0 || !date || !start || !end || !purpose || !location){
     toast('กรอกข้อมูลไม่ครบ', true);
     _setBorrowMsg_('กรอกข้อมูลไม่ครบ', 'error');
     return;
   }
+
   if(timeToMin(end) <= timeToMin(start)){
     toast('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม', true);
     _setBorrowMsg_('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม', 'error');
     return;
   }
 
-  // lock UI
+  // 🔥 ต้องอยู่ในฟังก์ชัน
   try{
     if(btn){ btn.disabled=true; }
     _setBorrowMsg_('กำลังบันทึกการจอง...', 'hint');
     toast('กำลังบันทึกการจอง');
 
-    // re-check conflict before save (server-side)
-    const av = await checkAvailability_({
-      deviceCode: device,
-      borrowDate: date,
-      startTime: start,
-      endTime: end,
-      // ถ้ามีโหมดแก้ไข ให้ส่ง excludeRowId เพื่อไม่ชนกับแถวเดิม
-      excludeRowId: (_editRowId||'')
-    });
+    // check conflict
+    for(const device of devices){
+      const av = await checkAvailability_({
+        deviceCode: device,
+        borrowDate: date,
+        startTime: start,
+        endTime: end,
+        excludeRowId: (_editRowId||'')
+      });
 
-    if(av && av.ok && av.conflict){
-      const m = (av.message || 'มีผู้ใช้จองเครื่องในช่วงเวลาดังกล่าว โปรดตรวจสอบอีกครั้ง');
-      toast(m, true);
-      try{ alert(m); }catch(_){ }
-      _setBorrowMsg_(m, 'error');
-      return;
+      if(av && av.ok && av.conflict){
+        const m = (av.message || `อุปกรณ์ ${device} ถูกจองในช่วงเวลานี้`);
+        toast(m, true);
+        _setBorrowMsg_(m, 'error');
+        return;
+      }
     }
 
     // save
-    const payload = { sap: state.sap, device, date, start, end, purpose, location, note };
-    const res = await jsonp('borrow', payload);
+    for(const device of devices){
+      const payload = { sap: state.sap, device, date, start, end, purpose, location, note };
+      const res = await jsonp('borrow', payload);
 
-    if(!res || !res.ok){
-      toast(res?.error||'บันทึกไม่สำเร็จ', true);
-      _setBorrowMsg_(res?.error||'บันทึกไม่สำเร็จ', 'error');
-      return;
+      if(!res || !res.ok){
+        toast(res?.error || 'บันทึกไม่สำเร็จ', true);
+        _setBorrowMsg_(res?.error || 'บันทึกไม่สำเร็จ', 'error');
+        return;
+      }
     }
 
     toast('บันทึกการจองเรียบร้อยแล้ว');
-    _setBorrowMsg_('บันทึกการจองเรียบร้อยแล้ว ดูที่ประวัติการยืมอีกครั้ง', 'success');
+    _setBorrowMsg_('บันทึกสำเร็จ', 'success');
 
-    // reset edit state + refresh views
     _editRowId=null;
     try{ await refreshDashboard(); await loadUsage(); }catch(_){}
-    // โหลดประวัติใหม่ในพื้นหลัง (ถ้าเปิดอยู่)
     try{
       const hw=document.getElementById('historyWrap');
       if(hw) await loadHistoryYear();
     }catch(_){}
+
   }catch(e){
     toast('บันทึกไม่สำเร็จ: '+(e.message||String(e)), true);
     _setBorrowMsg_('บันทึกไม่สำเร็จ', 'error');
@@ -1732,6 +2201,7 @@ function historyTableHtml(rows, mode){
             <th>${headLast1}</th><th>${headLast2}</th>
           </tr></thead>
           <tbody>
+
             ${g.items.map(r=>{
               const st = normalizeStatus_(String(r.status||'').toUpperCase());
               const canEdit = (mode==='borrow' && st==='BOOKED');
@@ -1983,7 +2453,13 @@ async function adminSave(rowId){
     document.addEventListener('touchend', blurButton, {capture:true, passive:true});
     document.addEventListener('pointerup', blurButton, true);
   })();
+function toggleAllDevice(source){
+  document.querySelectorAll('input[name="device"]').forEach(cb=>{
+    cb.checked = source.checked;
+  });
+}
 </script>
 
+</div>
 </body>
 </html>
