@@ -1134,10 +1134,37 @@ function updateDateLabel_(){
 })();
 
 
-function jsonp(action, params){
+// JSONP แบบทนต่อ Apps Script ตอบช้า: timeout 25 วินาที + retry 2 ครั้ง
+const _jsonpInFlight = new Map();
+function jsonp(action, params, options){
+  const opt = Object.assign({timeout:25000, retries:1, dedupe:false}, options||{});
+  const key = action+'|'+JSON.stringify(params||{});
+  if(opt.dedupe && _jsonpInFlight.has(key)) return _jsonpInFlight.get(key);
+
+  const run = async()=>{
+    let lastErr=null;
+    for(let attempt=0; attempt<=opt.retries; attempt++){
+      try{
+        return await jsonpOnce_(action, params, opt.timeout);
+      }catch(err){
+        lastErr=err;
+        if(attempt < opt.retries){
+          await new Promise(r=>setTimeout(r, 700*(attempt+1)));
+        }
+      }
+    }
+    throw lastErr || new Error('โหลด API ไม่สำเร็จ');
+  };
+
+  const p=run().finally(()=>_jsonpInFlight.delete(key));
+  if(opt.dedupe) _jsonpInFlight.set(key,p);
+  return p;
+}
+
+function jsonpOnce_(action, params, timeoutMs){
   return new Promise((resolve,reject)=>{
     if(!SCRIPT_URL || SCRIPT_URL.includes('PASTE_YOUR')) return reject(new Error('SCRIPT_URL ยังไม่ถูกตั้งค่า'));
-    const cb='cb_'+Math.random().toString(36).slice(2);
+    const cb='cb_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
     const qs=new URLSearchParams({action,callback:cb,_:Date.now().toString()});
     Object.keys(params||{}).forEach(k=>{
       const v=params[k]; if(v===undefined||v===null) return;
@@ -1145,11 +1172,32 @@ function jsonp(action, params){
     });
     const src=SCRIPT_URL + (SCRIPT_URL.includes('?')?'&':'?') + qs.toString();
     const script=document.createElement('script');
-    const timer=setTimeout(()=>{ cleanup(); reject(new Error('API timeout')); },15000);
-    function cleanup(){ clearTimeout(timer); try{ delete window[cb]; }catch(_){}; if(script.parentNode) script.parentNode.removeChild(script); }
-    window[cb]=(data)=>{ cleanup(); resolve(data); };
-    script.onerror=()=>{ cleanup(); reject(new Error('โหลด API ไม่สำเร็จ (ตรวจสอบ Deploy /exec และ Anyone)')); };
-    script.src=src; document.body.appendChild(script);
+    let settled=false;
+
+    // อย่าลบ callback ทันทีหลัง timeout เพราะคำตอบเก่าอาจกลับมาทีหลัง
+    // และทำให้ Chrome แจ้ง "callback is not defined"
+    function retireCallback(){
+      window[cb]=function(){};
+      setTimeout(()=>{ try{ delete window[cb]; }catch(_){} }, 60000);
+    }
+    function cleanup(){
+      clearTimeout(timer);
+      if(script.parentNode) script.parentNode.removeChild(script);
+    }
+    function finish(ok, value){
+      if(settled) return;
+      settled=true;
+      cleanup();
+      retireCallback();
+      ok ? resolve(value) : reject(value);
+    }
+
+    window[cb]=(data)=>finish(true,data);
+    script.onerror=()=>finish(false,new Error('โหลด API ไม่สำเร็จ (ตรวจสอบ Deploy /exec และ Anyone)'));
+    const timer=setTimeout(()=>finish(false,new Error('API timeout')), timeoutMs||25000);
+    script.async=true;
+    script.src=src;
+    document.body.appendChild(script);
   });
 }
 
@@ -1541,15 +1589,18 @@ function normalizeStatus_(status){
 
 async function refreshDashboard(){
   try{
-    const res=await jsonp('dashboard',{sap:state.sap});
+    // dedupe ป้องกันการกด/เรียกซ้ำระหว่าง request เดิมยังไม่จบ
+    const res=await jsonp('dashboard',{sap:state.sap},{dedupe:true});
     if(res&&res.ok){
       document.getElementById('mTotal').textContent=res.metrics.total??0;
       document.getElementById('mAvail').textContent=res.metrics.available??0;
       document.getElementById('mInuse').textContent=res.metrics.inuse??0;
       document.getElementById('mIssue').textContent=res.metrics.issue??0;
     }
-    await loadUsage();
-  }catch(e){ console.warn(e); }
+  }catch(e){ console.warn('dashboard:',e); }
+
+  // โหลดตารางต่อภายหลัง ไม่ผูกให้ dashboard ต้องรอจน timeout ทั้งชุด
+  try{ await loadUsage(); }catch(e){ console.warn('listUsage:',e); }
 }
 
 
@@ -1565,7 +1616,7 @@ async function loadUsage(){
   tbSPK.innerHTML = '<tr><td class="muted">กำลังโหลด...</td></tr>';
 
   try{
-    const res = await jsonp('listUsage',{date});
+    const res = await jsonp('listUsage',{date},{dedupe:true});
     if(!res || !res.ok){
       tbNB.innerHTML = tbSPK.innerHTML = '<tr><td class="muted">โหลดข้อมูลไม่สำเร็จ</td></tr>';
       return;
