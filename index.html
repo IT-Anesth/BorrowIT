@@ -1136,20 +1136,44 @@ function updateDateLabel_(){
 
 function jsonp(action, params){
   return new Promise((resolve,reject)=>{
-    if(!SCRIPT_URL || SCRIPT_URL.includes('PASTE_YOUR')) return reject(new Error('SCRIPT_URL ยังไม่ถูกตั้งค่า'));
-    const cb='cb_'+Math.random().toString(36).slice(2);
-    const qs=new URLSearchParams({action,callback:cb,_:Date.now().toString()});
+    if(!SCRIPT_URL || SCRIPT_URL.includes('PASTE_YOUR')){
+      reject(new Error('SCRIPT_URL ยังไม่ถูกตั้งค่า'));
+      return;
+    }
+
+    const cb='cb_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+    const qs=new URLSearchParams({action,callback:cb,_:String(Date.now())});
     Object.keys(params||{}).forEach(k=>{
-      const v=params[k]; if(v===undefined||v===null) return;
+      const v=params[k];
+      if(v===undefined || v===null) return;
       qs.append(k, typeof v==='string' ? v : JSON.stringify(v));
     });
+
     const src=SCRIPT_URL + (SCRIPT_URL.includes('?')?'&':'?') + qs.toString();
     const script=document.createElement('script');
-    const timer=setTimeout(()=>{ cleanup(); reject(new Error('API timeout')); },15000);
-    function cleanup(){ clearTimeout(timer); try{ delete window[cb]; }catch(_){}; if(script.parentNode) script.parentNode.removeChild(script); }
-    window[cb]=(data)=>{ cleanup(); resolve(data); };
-    script.onerror=()=>{ cleanup(); reject(new Error('โหลด API ไม่สำเร็จ (ตรวจสอบ Deploy /exec และ Anyone)')); };
-    script.src=src; document.body.appendChild(script);
+    script.async=true;
+    script.referrerPolicy='no-referrer';
+
+    let settled=false;
+    const finish=(fn,value)=>{
+      if(settled) return;
+      settled=true;
+      clearTimeout(timer);
+      if(script.parentNode) script.parentNode.removeChild(script);
+      // เก็บ callback เป็น no-op ชั่วคราว เผื่อ Apps Script ตอบกลับช้าหลัง timeout
+      window[cb]=function(){};
+      setTimeout(()=>{ try{ delete window[cb]; }catch(_){ window[cb]=undefined; } },120000);
+      fn(value);
+    };
+
+    window[cb]=(data)=>finish(resolve,data);
+    script.onerror=()=>finish(reject,new Error('โหลด API ไม่สำเร็จ: Chrome บล็อกคำขอ หรือ URL /exec ใช้งานไม่ได้'));
+
+    // Apps Script cold start ใน Chrome บางครั้งเกิน 15 วินาที
+    const timer=setTimeout(()=>finish(reject,new Error('API timeout (รอเกิน 60 วินาที)')),60000);
+
+    script.src=src;
+    (document.head || document.documentElement).appendChild(script);
   });
 }
 
@@ -1745,9 +1769,12 @@ async function openHistory(){
   `);
 
   const years = await loadLoanYears_('hYearBE', beNow);
+  const yearEl=document.getElementById('hYearBE');
+  const monthEl=document.getElementById('hMonth');
+  if(!yearEl || !monthEl) return; // modal อาจถูกปิดระหว่างรอ API
   const hasCurrent = years.includes(beNow);
-  document.getElementById('hYearBE').value = String(hasCurrent ? beNow : years[0]);
-  document.getElementById('hMonth').value=String(mNow);
+  yearEl.value = String(hasCurrent ? beNow : (years[0] || beNow));
+  monthEl.value=String(mNow);
   await loadHistoryYear();
 }
 
