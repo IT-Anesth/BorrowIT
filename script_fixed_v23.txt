@@ -6,7 +6,7 @@
 
 const SPREADSHEET_ID = '1Cyi-bv2w-MubEa9xbrGzTucspuiJ5jkXQVqkNu4xbkY';
 const TZ = 'Asia/Bangkok';
-const VERSION='2026-09-17-v23-speed';
+const VERSION='2026-09-17-v23.1-stable';
 const CACHE_SEC=120;
 const DASH_CACHE_SEC=15;
 
@@ -133,7 +133,7 @@ if (bISO < todayISO) return 'WAIT_RETURN';
 if (bISO > todayISO) return st;
 
   const now = new Date();
-  const nowMin = now.getHours()*60 + now.getMinutes();
+  const nowMin = Number(Utilities.formatDate(now, TZ, 'HH'))*60 + Number(Utilities.formatDate(now, TZ, 'mm'));
   const sMin = timeToMin_(start);
   const eMin = timeToMin_(end);
   if(!isFinite(sMin) || !isFinite(eMin)) return st;
@@ -263,6 +263,12 @@ function doGet(e){
 
   const payload = cb ? `${cb}(${JSON.stringify(out)});` : JSON.stringify(out);
   return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function invalidateV23Cache_(){
+  // Loan mutations only affect dashboard-derived data.
+  // Keep Devices / Locations caches warm for faster page loads.
+  try{ CacheService.getScriptCache().remove('dashboard_v23'); }catch(_){ }
 }
 
 function apiLogin_(e){
@@ -444,7 +450,10 @@ function apiBorrow_(e) {
   // 1. ตรวจสอบข้อมูลเบื้องต้น
   const uRow = findUserBySap_(sap);
   if (!uRow) return { ok: false, error: 'Unauthorized' };
-  if (!device || !date) return { ok: false, error: 'ข้อมูลไม่ครบถ้วน' };
+  if (!device || !date || !start || !end) return { ok: false, error: 'ข้อมูลไม่ครบถ้วน' };
+  const sMin = timeToMin_(start), eMin = timeToMin_(end);
+  if(!isFinite(sMin) || !isFinite(eMin) || eMin <= sMin) return {ok:false,error:'ช่วงเวลาไม่ถูกต้อง'};
+  if(!deviceIsActive_(device)) return {ok:false,error:'อุปกรณ์นี้ไม่พร้อมใช้งาน'};
 
   const pack = readSheet_(SHEET.LOANS);
   const sh = pack.sh;
@@ -462,8 +471,8 @@ function apiBorrow_(e) {
   let status = 'BOOKED';
   const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
   if (date === today) {
-    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-    if (nowMin >= timeToMin_(start) && nowMin <= timeToMin_(end)) status = 'IN_USE';
+    const nowMin = Number(Utilities.formatDate(new Date(), TZ, 'HH')) * 60 + Number(Utilities.formatDate(new Date(), TZ, 'mm'));
+    if (nowMin >= timeToMin_(start) && nowMin < timeToMin_(end)) status = 'IN_USE';
   }
 
   const rowId = Date.now();
@@ -501,7 +510,6 @@ function apiCheckAvailability_(e){
 }
 
 function apiReturn_(e){
-  invalidateV23Cache_();
   const p=e.parameter||{};
   const sap=normalize_(p.sap);
   const uRow=findUserBySap_(sap);
@@ -537,6 +545,7 @@ function apiReturn_(e){
     sh.getRange(rowId, idx.ReturnTime+1).setValue("'"+rTime);
     sh.getRange(rowId, idx.ReturnNote+1).setValue(rNote);
     sh.getRange(rowId, idx.Status+1).setValue(status);
+    invalidateV23Cache_();
     return {ok:true,row:rowId};
   }
 
@@ -570,6 +579,7 @@ function apiReturn_(e){
   sh.getRange(targetRow, idx.ReturnTime+1).setValue("'"+rTime);
   sh.getRange(targetRow, idx.ReturnNote+1).setValue(rNote);
   sh.getRange(targetRow, idx.Status+1).setValue(status);
+  invalidateV23Cache_();
   return {ok:true,row:targetRow};
 }
 
@@ -658,7 +668,6 @@ function apiAdminList_(e){
 }
 
 function apiDeleteRow_(e){
-  invalidateV23Cache_();
   const p=e.parameter||{};
   const rowId=safeNum_(p.rowId,0);
   const sap=normalize_(p.sap);
@@ -678,11 +687,11 @@ function apiDeleteRow_(e){
   if(!isAdmin && rowSap!==sap) return {ok:false,error:'No permission'};
 
   sh.deleteRow(rowId);
+  invalidateV23Cache_();
   return {ok:true};
 }
 
 function apiCancelRow_(e){
-  invalidateV23Cache_();
   const p=e.parameter||{};
   const rowId=safeNum_(p.rowId,0);
   const sap=normalize_(p.sap);
@@ -717,6 +726,7 @@ function apiCancelRow_(e){
     const prev=String(row[idx.ReturnNote]||'').trim();
     sh.getRange(rowId, idx.ReturnNote+1).setValue(prev? (prev+' | Cancelled') : 'Cancelled');
   }
+  invalidateV23Cache_();
   return {ok:true};
 }
 
@@ -825,6 +835,7 @@ function apiUpdateRow_(e) {
   // คงสถานะเป็น BOOKED หลังแก้ไข (หรือตาม Logic ของคุณ)
   if (idx.Status != null) sh.getRange(rowId, idx.Status + 1).setValue('BOOKED');
 
+  invalidateV23Cache_();
   return { ok: true };
 }
 

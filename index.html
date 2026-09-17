@@ -1137,7 +1137,12 @@ function updateDateLabel_(){
 // JSONP แบบทนต่อ Apps Script ตอบช้า: timeout 25 วินาที + retry 2 ครั้ง
 const _jsonpInFlight = new Map();
 function jsonp(action, params, options){
-  const opt = Object.assign({timeout:25000, retries:1, dedupe:false}, options||{});
+  const mutationActions = new Set(['borrow','return','deleterow','cancelrow','updaterow']);
+  const actionKey = String(action||'').toLowerCase();
+  const defaults = {timeout:20000, retries: mutationActions.has(actionKey) ? 0 : 1, dedupe:false};
+  const opt = Object.assign(defaults, options||{});
+  // Never auto-retry write actions: a delayed response must not create duplicate mutations.
+  if(mutationActions.has(actionKey)) opt.retries = 0;
   const key = action+'|'+JSON.stringify(params||{});
   if(opt.dedupe && _jsonpInFlight.has(key)) return _jsonpInFlight.get(key);
 
@@ -1718,7 +1723,6 @@ async function openBorrow(){
   setActiveTab('tabBorrow'); 
   showModal('ยืม Notebook/อุปกรณ์', borrowFormHtml());
   wireBorrowLiveCheck_();
-  setTimeout(()=>{ _runBorrowAvailabilityCheck_({silent:true}); }, 0);
 
   // date label DD/MM/YYYY
   try{
@@ -1749,6 +1753,8 @@ if(wrap){
   initTimeSelect('bEnd','18:00');
   fillDeviceSelects();
   fillLocationSelect();
+  // Check only after device/time controls are ready; avoids an empty availability request.
+  setTimeout(()=>{ _runBorrowAvailabilityCheck_({silent:true}); }, 0);
   refreshBorrowList().catch(()=>{});
 }
 
