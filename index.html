@@ -1850,14 +1850,15 @@ async function editLoan(rowId){
 }
 
 
-async function returnLoan(rowId){
+async function returnLoan(rowId, sheetRow){
   rowId=String(rowId??'').trim();
+  sheetRow=Number(sheetRow||0);
   if(!rowId) return;
   const ok = confirm('ยืนยันการคืน Notebook รายการนี้?');
   if(!ok) return;
   try{
     toast('กำลังบันทึกการคืน...');
-    const res = await jsonp('return', { sap: state.sap, rowId, status:'RETURNED' });
+    const res = await jsonp('return', { sap: state.sap, rowId, sheetRow, status:'RETURNED' });
     if(!res || !res.ok){ toast(res?.error||'คืนไม่สำเร็จ', true); return; }
     toast('บันทึกการคืนเรียบร้อยแล้ว');
     // refresh current modals & dashboard
@@ -2238,7 +2239,7 @@ function historyTableHtml(rows, mode){
               const lastTd2 = (canCancel || canReturn)
                 ? `<div class="actions">
                      ${canCancel ? `<button class="mini danger" onclick="cancelLoan('${escapeAttr(String(r.rowId||''))}')">ยกเลิก</button>` : ''}
-                     ${canReturn ? `<button class="mini primary" onclick="returnLoan('${escapeAttr(String(r.rowId||''))}')">คืน</button>` : ''}
+                     ${canReturn ? `<button class="mini primary" onclick="returnLoan('${escapeAttr(String(r.rowId||''))}',${Number(r.sheetRow||0)})">คืน</button>` : ''}
                    </div>`
                 : '<span class="muted">-</span>';
 

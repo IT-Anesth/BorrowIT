@@ -6,7 +6,7 @@
 
 const SPREADSHEET_ID = '1Cyi-bv2w-MubEa9xbrGzTucspuiJ5jkXQVqkNu4xbkY';
 const TZ = 'Asia/Bangkok';
-const VERSION='2026-09-22-v24.1-return-fixed';
+const VERSION='2026-09-22-v24.2-return-sheetrow-fix';
 const CACHE_SEC=120;
 const DASH_CACHE_SEC=15;
 
@@ -551,9 +551,13 @@ function apiReturn_(e){
 
   const { sh, idx } = readSheet_(SHEET.LOANS);
 
-  // ===== 1) Return by persistent RowId (preferred) =====
-  if(rowId){
-    const sheetRow = resolveLoanSheetRow_(rowId);
+  // ===== 1) Return exact history row =====
+  if(rowId || p.sheetRow){
+    let sheetRow = safeNum_(p.sheetRow,0);
+    // If UI did not send physical row, resolve from persistent RowId.
+    if(!(Number.isInteger(sheetRow) && sheetRow>=2 && sheetRow<=sh.getLastRow())){
+      sheetRow = resolveLoanSheetRow_(rowId);
+    }
     if(!sheetRow) return {ok:false,error:'ไม่พบรายการที่ต้องการคืน'};
     const row=sh.getRange(sheetRow,1,1,sh.getLastColumn()).getValues()[0];
     const rowSap=normalize_(row[idx.SAP]);
@@ -632,6 +636,7 @@ function apiHistory_(e){
 
     out.push({
       rowId: safeNum_(r[idx.RowId], i+2),
+      sheetRow: i+2,
       borrower: normalize_(r[idx.BorrowerName]),
       sap: normalize_(r[idx.SAP]),
       device: normalize_(r[idx.DeviceCode]).toUpperCase(),
