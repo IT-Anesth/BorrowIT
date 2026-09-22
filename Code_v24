@@ -6,7 +6,7 @@
 
 const SPREADSHEET_ID = '1Cyi-bv2w-MubEa9xbrGzTucspuiJ5jkXQVqkNu4xbkY';
 const TZ = 'Asia/Bangkok';
-const VERSION='2026-09-22-v24.2-return-sheetrow-fix';
+const VERSION='2026-09-22-v25-return-cache-fix';
 const CACHE_SEC=120;
 const DASH_CACHE_SEC=15;
 
@@ -289,11 +289,17 @@ function doGet(e){
   return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
-function invalidateV23Cache_(){
-  // Loan mutations only affect dashboard-derived data.
-  // Keep Devices / Locations caches warm for faster page loads.
-  try{ CacheService.getScriptCache().remove('dashboard_v23'); }catch(_){ }
+function clearLoanMutationCache_(){
+  // Clear only dashboard cache after borrow/return/cancel/edit/delete.
+  // This helper is intentionally self-contained so return actions never fail
+  // because of an old/missing invalidateV23Cache_ deployment.
+  try {
+    CacheService.getScriptCache().remove('dashboard_v23');
+  } catch (err) {
+    console.log('cache clear skipped: ' + err);
+  }
 }
+
 
 function apiLogin_(e){
   const p=e.parameter||{};
@@ -507,7 +513,7 @@ function apiBorrow_(e) {
     '', '', '', status
   ]);
 
-  invalidateV23Cache_();
+  clearLoanMutationCache_();
   return { ok: true, rowId: rowId };
 }
 
@@ -575,7 +581,7 @@ function apiReturn_(e){
     sh.getRange(sheetRow, idx.ReturnTime+1).setValue("'"+rTime);
     sh.getRange(sheetRow, idx.ReturnNote+1).setValue(rNote);
     sh.getRange(sheetRow, idx.Status+1).setValue(status);
-    invalidateV23Cache_();
+    clearLoanMutationCache_();
     return {ok:true,rowId:rowId,sheetRow:sheetRow};
   }
 
@@ -609,7 +615,7 @@ function apiReturn_(e){
   sh.getRange(targetRow, idx.ReturnTime+1).setValue("'"+rTime);
   sh.getRange(targetRow, idx.ReturnNote+1).setValue(rNote);
   sh.getRange(targetRow, idx.Status+1).setValue(status);
-  invalidateV23Cache_();
+  clearLoanMutationCache_();
   return {ok:true,row:targetRow};
 }
 
@@ -718,7 +724,7 @@ function apiDeleteRow_(e){
   if(!isAdmin && rowSap!==sap) return {ok:false,error:'No permission'};
 
   sh.deleteRow(rowId);
-  invalidateV23Cache_();
+  clearLoanMutationCache_();
   return {ok:true};
 }
 
@@ -759,7 +765,7 @@ function apiCancelRow_(e){
     const prev=String(row[idx.ReturnNote]||'').trim();
     sh.getRange(sheetRow, idx.ReturnNote+1).setValue(prev? (prev+' | Cancelled') : 'Cancelled');
   }
-  invalidateV23Cache_();
+  clearLoanMutationCache_();
   return {ok:true};
 }
 
@@ -868,7 +874,7 @@ function apiUpdateRow_(e) {
   // คงสถานะเป็น BOOKED หลังแก้ไข (หรือตาม Logic ของคุณ)
   if (idx.Status != null) sh.getRange(rowId, idx.Status + 1).setValue('BOOKED');
 
-  invalidateV23Cache_();
+  clearLoanMutationCache_();
   return { ok: true };
 }
 
