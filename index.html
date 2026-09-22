@@ -1851,7 +1851,7 @@ async function editLoan(rowId){
 
 
 async function returnLoan(rowId){
-  rowId=Number(rowId||0);
+  rowId=String(rowId??'').trim();
   if(!rowId) return;
   const ok = confirm('ยืนยันการคืน Notebook รายการนี้?');
   if(!ok) return;
@@ -1869,7 +1869,7 @@ async function returnLoan(rowId){
 }
 
 async function cancelLoan(rowId){
-  rowId=Number(rowId||0);
+  rowId=String(rowId??'').trim();
   if(!rowId) return;
   const ok = confirm('ยืนยันการยกเลิกรายการนี้?');
   if(!ok) return;
@@ -2226,17 +2226,19 @@ function historyTableHtml(rows, mode){
               // - โหมดอื่นคงเดิมเพื่อไม่กระทบระบบงานอื่น
               let canCancel=false, canReturn=false;
               if(mode==='history'){
-                canCancel = (st==='BOOKED' || st==='IN_USE');
-                canReturn = (st==='WAIT_RETURN');
+                // BOOKED = ยังไม่เริ่มใช้งาน จึงยกเลิกได้
+                // IN_USE / WAIT_RETURN = มีการใช้งานแล้ว จึงต้องเป็นการคืน
+                canCancel = (st==='BOOKED');
+                canReturn = (st==='IN_USE' || st==='WAIT_RETURN');
               }else{
                 canCancel = (st==='BOOKED');
-                canReturn = (st==='BOOKED' || st==='IN_USE' || st==='WAIT_RETURN');
+                canReturn = (st==='IN_USE' || st==='WAIT_RETURN');
               }
 
               const lastTd2 = (canCancel || canReturn)
                 ? `<div class="actions">
-                     ${canCancel ? `<button class="mini danger" onclick="cancelLoan(${Number(r.rowId)})">ยกเลิก</button>` : ''}
-                     ${canReturn ? `<button class="mini primary" onclick="returnLoan(${Number(r.rowId)})">คืน</button>` : ''}
+                     ${canCancel ? `<button class="mini danger" onclick="cancelLoan('${escapeAttr(String(r.rowId||''))}')">ยกเลิก</button>` : ''}
+                     ${canReturn ? `<button class="mini primary" onclick="returnLoan('${escapeAttr(String(r.rowId||''))}')">คืน</button>` : ''}
                    </div>`
                 : '<span class="muted">-</span>';
 
