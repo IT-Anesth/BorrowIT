@@ -741,7 +741,14 @@ function apiCancelRow_(e){
   const head=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
   const idx={}; head.forEach((h,i)=>idx[String(h).trim()]=i);
 
-  const sheetRow=resolveLoanSheetRow_(rowId);
+  // Prefer persistent RowId. If an old record has no RowId, fall back to the
+  // physical sheet row sent by the UI. This prevents history rows with legacy/blank
+  // RowId from failing with "ไม่พบรายการที่ต้องการยกเลิก".
+  let sheetRow=resolveLoanSheetRow_(rowId);
+  const uiSheetRow=safeNum_(p.sheetRow,0);
+  if(!sheetRow && Number.isInteger(uiSheetRow) && uiSheetRow>=2 && uiSheetRow<=sh.getLastRow()){
+    sheetRow=uiSheetRow;
+  }
   if(!sheetRow) return {ok:false,error:'ไม่พบรายการที่ต้องการยกเลิก'};
   const row=sh.getRange(sheetRow,1,1,sh.getLastColumn()).getValues()[0];
   const rowSap=normalize_(row[idx.SAP]);

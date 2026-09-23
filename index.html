@@ -1869,14 +1869,15 @@ async function returnLoan(rowId, sheetRow){
   }
 }
 
-async function cancelLoan(rowId){
+async function cancelLoan(rowId, sheetRow){
   rowId=String(rowId??'').trim();
+  sheetRow=Number(sheetRow||0);
   if(!rowId) return;
   const ok = confirm('ยืนยันการยกเลิกรายการนี้?');
   if(!ok) return;
   try{
     toast('กำลังบันทึกการยกเลิก...');
-    const res=await jsonp('cancelRow',{sap:state.sap,rowId});
+    const res=await jsonp('cancelRow',{sap:state.sap,rowId,sheetRow});
     if(!res||!res.ok){ toast(res?.error||'ยกเลิกไม่สำเร็จ', true); return; }
     toast('ยกเลิกรายการเรียบร้อยแล้ว');
     try{ await loadHistoryYear(); }catch(_){}
@@ -2238,7 +2239,7 @@ function historyTableHtml(rows, mode){
 
               const lastTd2 = (canCancel || canReturn)
                 ? `<div class="actions">
-                     ${canCancel ? `<button class="mini danger" onclick="cancelLoan('${escapeAttr(String(r.rowId||''))}')">ยกเลิก</button>` : ''}
+                     ${canCancel ? `<button class="mini danger" onclick="cancelLoan('${escapeAttr(String(r.rowId||''))}',${Number(r.sheetRow||0)})">ยกเลิก</button>` : ''}
                      ${canReturn ? `<button class="mini primary" onclick="returnLoan('${escapeAttr(String(r.rowId||''))}',${Number(r.sheetRow||0)})">คืน</button>` : ''}
                    </div>`
                 : '<span class="muted">-</span>';
